@@ -12,31 +12,36 @@ const LAYER_LABELS: Record<string, string> = {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  const { title, description, layerType } = await request.json()
+    const { title, description, layerType } = await request.json()
 
-  const userMessage = `タスク名: ${title}
+    const userMessage = `タスク名: ${title}
 レイヤー: ${LAYER_LABELS[layerType] ?? layerType}
 説明: ${description ?? '（説明なし）'}`
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 512,
-    system: `あなたはPdMの設計業務を支援するAIです。
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 512,
+      system: `あなたはPdMの設計業務を支援するAIです。
 以下のタスクについて、今すぐ着手できる最初の具体的なアクションを1〜2ステップで、
 できるだけ簡潔に提案してください。`,
-    messages: [{ role: 'user', content: userMessage }],
-  })
+      messages: [{ role: 'user', content: userMessage }],
+    })
 
-  const content = message.content[0]
-  if (content.type !== 'text') {
-    return NextResponse.json({ error: 'Unexpected response' }, { status: 500 })
+    const content = message.content[0]
+    if (content.type !== 'text') {
+      return NextResponse.json({ error: 'Unexpected response' }, { status: 500 })
+    }
+
+    return NextResponse.json({ suggestion: content.text })
+  } catch (e) {
+    console.error('[ai/dashboard] error:', e)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-
-  return NextResponse.json({ suggestion: content.text })
 }

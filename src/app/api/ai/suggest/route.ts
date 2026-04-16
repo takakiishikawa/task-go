@@ -23,50 +23,55 @@ const LAYER_LABELS: Record<string, string> = {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  const { taskId, title, description, layerType, suggestionType } = await request.json()
+    const { taskId, title, description, layerType, suggestionType } = await request.json()
 
-  if (!title || !suggestionType) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-  }
+    if (!title || !suggestionType) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
 
-  const userMessage = `タスク名: ${title}
+    const userMessage = `タスク名: ${title}
 レイヤー: ${LAYER_LABELS[layerType] ?? layerType}
 説明: ${description ?? '（説明なし）'}`
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1024,
-    system: SYSTEM_PROMPTS[suggestionType as 'first_step' | 'research'],
-    messages: [{ role: 'user', content: userMessage }],
-  })
-
-  const content = message.content[0]
-  if (content.type !== 'text') {
-    return NextResponse.json({ error: 'Unexpected response' }, { status: 500 })
-  }
-
-  // Save to DB
-  const { data, error } = await supabase
-    .schema('taskgo')
-    .from('ai_suggestions')
-    .insert({
-      task_id: taskId,
-      user_id: user.id,
-      suggestion_type: suggestionType,
-      content: content.text,
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      system: SYSTEM_PROMPTS[suggestionType as 'first_step' | 'research'],
+      messages: [{ role: 'user', content: userMessage }],
     })
-    .select()
-    .single()
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const content = message.content[0]
+    if (content.type !== 'text') {
+      return NextResponse.json({ error: 'Unexpected response' }, { status: 500 })
+    }
+
+    // Save to DB (schema set at client level)
+    const { data, error } = await supabase
+      .from('ai_suggestions')
+      .insert({
+        task_id: taskId,
+        user_id: user.id,
+        suggestion_type: suggestionType,
+        content: content.text,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('[ai/suggest] DB error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ suggestion: data })
+  } catch (e) {
+    console.error('[ai/suggest] error:', e)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
-
-  return NextResponse.json({ suggestion: data })
 }
