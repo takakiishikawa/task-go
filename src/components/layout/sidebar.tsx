@@ -14,11 +14,13 @@ import {
   Moon,
   Info,
   Zap,
+  Target,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/', label: 'ダッシュボード', icon: LayoutDashboard },
   { href: '/tasks', label: 'タスク', icon: ListTodo },
+  { href: '/focus', label: 'フォーカス管理', icon: Target },
   { href: '/layers', label: '設計レイヤー', icon: Layers },
 ]
 

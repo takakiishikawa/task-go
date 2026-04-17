@@ -2,11 +2,16 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { getTask, updateTask, getAiSuggestions } from '@/lib/db'
-import type { Task, AiSuggestion, LayerType, TaskStatus } from '@/types/database'
+import {
+  getTask, updateTask, getAiSuggestions,
+  getTaskTagIds, getAllTags, addTagToTask, removeTagFromTask,
+} from '@/lib/db'
+import type { Task, AiSuggestion, LayerType, TaskStatus, Tag } from '@/types/database'
 import { StatusDot } from '@/components/ui/status-dot'
+import { TagBadge } from '@/components/ui/tag-badge'
+import { OutputModal } from '@/components/ui/output-modal'
 import { DatePicker } from '@/components/ui/date-picker'
-import { ArrowLeft, Sparkles, BookOpen, Clock } from 'lucide-react'
+import { ArrowLeft, Sparkles, BookOpen, Clock, Tag as TagIcon, X, AlertTriangle, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -30,15 +35,25 @@ const STATUS_CONFIG: Record<TaskStatus, { label: string; dot: 'gray' | 'blue' | 
   done: { label: '完了', dot: 'green' },
 }
 
+const ISSUE_TITLE_PREFIXES = ['【短期】', '【中期】']
+function isIssueDiscoveryTask(title: string) {
+  return ISSUE_TITLE_PREFIXES.some((prefix) => title.startsWith(prefix))
+}
+
 export default function TaskDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [task, setTask] = useState<Task | null>(null)
   const [suggestions, setSuggestions] = useState<AiSuggestion[]>([])
+  const [tags, setTags] = useState<Tag[]>([])
+  const [allTags, setAllTags] = useState<Tag[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [aiLoading, setAiLoading] = useState<'first_step' | 'research' | null>(null)
+  const [aiLoading, setAiLoading] = useState<'first_step' | 'research' | 'issues' | null>(null)
   const [editMode, setEditMode] = useState(false)
+  const [tagInput, setTagInput] = useState('')
+  const [tagSuggesting, setTagSuggesting] = useState(false)
+  const [outputModal, setOutputModal] = useState(false)
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
@@ -49,10 +64,17 @@ export default function TaskDetailPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [t, s] = await Promise.all([getTask(id), getAiSuggestions(id)])
+      const [t, s, tagIds, allTagsData] = await Promise.all([
+        getTask(id),
+        getAiSuggestions(id),
+        getTaskTagIds(id),
+        getAllTags(),
+      ])
       if (!t) { router.push('/tasks'); return }
       setTask(t)
       setSuggestions(s)
+      setAllTags(allTagsData)
+      setTags(allTagsData.filter((tag) => tagIds.includes(tag.id)))
       setEditForm({
         title: t.title,
         description: t.description ?? '',
@@ -72,6 +94,31 @@ export default function TaskDetailPage() {
 
   const handleSave = async () => {
     if (!task) return
+    const newStatus = editForm.status
+    const isMarkingDone = newStatus === 'done' && task.status !== 'done'
+
+    if (isMarkingDone) {
+      // Save everything except status/completed_at — output modal will handle those
+      setSaving(true)
+      try {
+        const updated = await updateTask(task.id, {
+          title: editForm.title.trim(),
+          description: editForm.description || null,
+          layer_type: editForm.layer_type,
+          due_date: editForm.due_date || null,
+        })
+        setTask(updated)
+        setEditMode(false)
+      } catch (e) {
+        console.error(e)
+        toast.error(e instanceof Error ? e.message : '保存に失敗しました')
+      } finally {
+        setSaving(false)
+      }
+      setOutputModal(true)
+      return
+    }
+
     setSaving(true)
     try {
       const updated = await updateTask(task.id, {
@@ -90,6 +137,28 @@ export default function TaskDetailPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleOutputSave = async (outputNote: string) => {
+    if (!task) return
+    const updated = await updateTask(task.id, {
+      status: 'done',
+      output_note: outputNote,
+      completed_at: new Date().toISOString(),
+    })
+    setTask(updated)
+    setOutputModal(false)
+    toast.success('アウトプットを記録しました')
+  }
+
+  const handleOutputSkip = async () => {
+    if (!task) return
+    const updated = await updateTask(task.id, {
+      status: 'done',
+      completed_at: new Date().toISOString(),
+    })
+    setTask(updated)
+    setOutputModal(false)
   }
 
   const handleAiSuggest = async (type: 'first_step' | 'research') => {
@@ -119,6 +188,84 @@ export default function TaskDetailPage() {
     }
   }
 
+  const handleIssueDiscovery = async () => {
+    if (!task) return
+    const issueType = task.title.startsWith('【短期】') ? 'short' : 'mid'
+    setAiLoading('issues')
+    try {
+      const res = await fetch('/api/ai/issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: task.id, issueType }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setSuggestions((prev) => [data.suggestion, ...prev])
+      toast.success('課題発見レポートを生成しました')
+    } catch (e) {
+      console.error(e)
+      toast.error('課題発見に失敗しました')
+    } finally {
+      setAiLoading(null)
+    }
+  }
+
+  const handleAddTag = async (name: string) => {
+    if (!task || !name.trim()) return
+    const trimmed = name.trim()
+    if (tags.some((t) => t.name === trimmed)) return
+    try {
+      const tag = await addTagToTask(task.id, trimmed)
+      setTags((prev) => [...prev, tag])
+      setAllTags((prev) => prev.some((t) => t.id === tag.id) ? prev : [...prev, tag])
+      setTagInput('')
+    } catch (e) {
+      console.error(e)
+      toast.error('タグの追加に失敗しました')
+    }
+  }
+
+  const handleRemoveTag = async (tagId: string) => {
+    if (!task) return
+    try {
+      await removeTagFromTask(task.id, tagId)
+      setTags((prev) => prev.filter((t) => t.id !== tagId))
+    } catch (e) {
+      console.error(e)
+      toast.error('タグの削除に失敗しました')
+    }
+  }
+
+  const handleSuggestTags = async () => {
+    if (!task) return
+    setTagSuggesting(true)
+    try {
+      const res = await fetch('/api/ai/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: task.title,
+          description: task.description,
+          layerType: task.layer_type,
+        }),
+      })
+      const data = await res.json()
+      if (data.tags?.length) {
+        for (const tagName of data.tags as string[]) {
+          await handleAddTag(tagName)
+        }
+        toast.success(`タグを提案しました: ${(data.tags as string[]).join(', ')}`)
+      } else {
+        toast.info('タグの提案がありませんでした')
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error('タグ提案に失敗しました')
+    } finally {
+      setTagSuggesting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
@@ -130,6 +277,7 @@ export default function TaskDetailPage() {
   if (!task) return null
 
   const statusConf = STATUS_CONFIG[task.status]
+  const isIssuetask = isIssueDiscoveryTask(task.title)
 
   return (
     <div className="px-8 py-8 max-w-3xl">
@@ -250,7 +398,7 @@ export default function TaskDetailPage() {
         </div>
 
         {/* Description */}
-        <div>
+        <div className="mb-4">
           <label className="text-xs block mb-1 text-muted-foreground">説明</label>
           {editMode ? (
             <Textarea
@@ -266,38 +414,144 @@ export default function TaskDetailPage() {
             </p>
           )}
         </div>
-      </div>
 
-      {/* AI buttons */}
-      <div className="rounded-lg p-5 mb-6 bg-card border border-border">
-        <h3 className="text-xs font-medium mb-4 flex items-center gap-2 text-muted-foreground">
-          <Sparkles style={{ width: 12, height: 12, color: '#5E6AD2' }} />
-          AIサジェスト
-        </h3>
-        <div className="flex gap-3">
-          <button
-            onClick={() => handleAiSuggest('first_step')}
-            disabled={aiLoading !== null}
-            className="flex items-center gap-2 text-xs px-4 py-2.5 rounded border transition-colors disabled:opacity-50"
-            style={{ border: '1px solid #5E6AD2', color: '#5E6AD2', background: 'transparent' }}
-            onMouseEnter={(e) => { if (!aiLoading) e.currentTarget.style.background = 'rgba(94,106,210,0.1)' }}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            <Sparkles style={{ width: 12, height: 12 }} />
-            {aiLoading === 'first_step' ? '提案中...' : '次の一手を提案してもらう'}
-          </button>
+        {/* Output note (if done) */}
+        {task.status === 'done' && (
+          <div className="mb-4 rounded p-3 border" style={{ background: 'rgba(48,164,108,0.06)', borderColor: 'rgba(48,164,108,0.2)' }}>
+            <label className="text-xs block mb-1 font-medium" style={{ color: '#30A46C' }}>アウトプット記録</label>
+            <p className="text-sm text-muted-foreground">
+              {task.output_note || '（記録なし）'}
+            </p>
+            {task.completed_at && (
+              <p className="text-xs mt-1" style={{ color: '#30A46C', opacity: 0.7 }}>
+                {new Date(task.completed_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 完了
+              </p>
+            )}
+          </div>
+        )}
 
-          <button
-            onClick={() => handleAiSuggest('research')}
-            disabled={aiLoading !== null}
-            className="flex items-center gap-2 text-xs px-4 py-2.5 rounded border transition-colors disabled:opacity-50 border-border text-muted-foreground hover:border-ring hover:text-foreground"
-            style={{ background: 'transparent' }}
-          >
-            <BookOpen style={{ width: 12, height: 12 }} />
-            {aiLoading === 'research' ? '提案中...' : 'リサーチを手伝ってもらう'}
-          </button>
+        {/* Tags */}
+        <div>
+          <label className="text-xs block mb-1.5 text-muted-foreground flex items-center gap-1">
+            <TagIcon style={{ width: 11, height: 11 }} />
+            タグ
+          </label>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {tags.map((tag) => (
+              <TagBadge
+                key={tag.id}
+                name={tag.name}
+                size="sm"
+                onRemove={() => handleRemoveTag(tag.id)}
+              />
+            ))}
+
+            {/* Tag input */}
+            <div className="flex items-center gap-1">
+              <input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && tagInput.trim()) {
+                    e.preventDefault()
+                    handleAddTag(tagInput)
+                  }
+                }}
+                placeholder="タグを追加..."
+                className="text-xs px-2 py-0.5 rounded outline-none bg-input border border-border text-foreground placeholder:text-muted-foreground focus:border-ring"
+                style={{ width: 100 }}
+                list="tag-suggestions"
+              />
+              <datalist id="tag-suggestions">
+                {allTags
+                  .filter((t) => !tags.some((tt) => tt.id === t.id))
+                  .map((t) => <option key={t.id} value={t.name} />)}
+              </datalist>
+              {tagInput && (
+                <button
+                  onClick={() => handleAddTag(tagInput)}
+                  className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Plus style={{ width: 12, height: 12 }} />
+                </button>
+              )}
+            </div>
+
+            {/* AI suggest tags */}
+            <button
+              onClick={handleSuggestTags}
+              disabled={tagSuggesting}
+              className="flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors disabled:opacity-50"
+              style={{ color: '#5E6AD2', border: '1px solid rgba(94,106,210,0.3)', background: 'transparent' }}
+              onMouseEnter={(e) => { if (!tagSuggesting) e.currentTarget.style.background = 'rgba(94,106,210,0.1)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <Sparkles style={{ width: 10, height: 10 }} />
+              {tagSuggesting ? '提案中...' : 'AI提案'}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Issue Discovery AI (for recurring issue tasks) */}
+      {isIssuetask && (
+        <div className="rounded-lg p-5 mb-6 bg-card border border-border">
+          <h3 className="text-xs font-medium mb-3 flex items-center gap-2 text-muted-foreground">
+            <AlertTriangle style={{ width: 12, height: 12, color: '#F5A623' }} />
+            課題発見AI
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            {task.title.startsWith('【短期】')
+              ? '現在の進行中タスクを分析し、今すぐ対処すべき重要な課題をトップ3で発見します。'
+              : '3〜12ヶ月のスパンで見た時に対処すべき重要な課題をトップ3で発見します。'
+            }
+          </p>
+          <button
+            onClick={handleIssueDiscovery}
+            disabled={aiLoading !== null}
+            className="flex items-center gap-2 text-xs px-4 py-2.5 rounded transition-colors disabled:opacity-50"
+            style={{ background: 'rgba(245,166,35,0.12)', color: '#D97706', border: '1px solid rgba(245,166,35,0.3)' }}
+            onMouseEnter={(e) => { if (!aiLoading) e.currentTarget.style.background = 'rgba(245,166,35,0.2)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(245,166,35,0.12)' }}
+          >
+            <Sparkles style={{ width: 12, height: 12 }} />
+            {aiLoading === 'issues' ? '分析中...' : '課題を発見する'}
+          </button>
+        </div>
+      )}
+
+      {/* AI buttons (non-issue tasks) */}
+      {!isIssuetask && (
+        <div className="rounded-lg p-5 mb-6 bg-card border border-border">
+          <h3 className="text-xs font-medium mb-4 flex items-center gap-2 text-muted-foreground">
+            <Sparkles style={{ width: 12, height: 12, color: '#5E6AD2' }} />
+            AIサジェスト
+          </h3>
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleAiSuggest('first_step')}
+              disabled={aiLoading !== null}
+              className="flex items-center gap-2 text-xs px-4 py-2.5 rounded border transition-colors disabled:opacity-50"
+              style={{ border: '1px solid #5E6AD2', color: '#5E6AD2', background: 'transparent' }}
+              onMouseEnter={(e) => { if (!aiLoading) e.currentTarget.style.background = 'rgba(94,106,210,0.1)' }}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <Sparkles style={{ width: 12, height: 12 }} />
+              {aiLoading === 'first_step' ? '提案中...' : '次の一手を提案してもらう'}
+            </button>
+
+            <button
+              onClick={() => handleAiSuggest('research')}
+              disabled={aiLoading !== null}
+              className="flex items-center gap-2 text-xs px-4 py-2.5 rounded border transition-colors disabled:opacity-50 border-border text-muted-foreground hover:border-ring hover:text-foreground"
+              style={{ background: 'transparent' }}
+            >
+              <BookOpen style={{ width: 12, height: 12 }} />
+              {aiLoading === 'research' ? '提案中...' : 'リサーチを手伝ってもらう'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* AI suggestions history */}
       {suggestions.length > 0 && (
@@ -313,11 +567,19 @@ export default function TaskDetailPage() {
                   <span
                     className="text-xs px-2 py-0.5 rounded"
                     style={{
-                      background: s.suggestion_type === 'first_step' ? 'rgba(94,106,210,0.15)' : 'var(--secondary)',
-                      color: s.suggestion_type === 'first_step' ? '#5E6AD2' : 'var(--muted-foreground)',
+                      background:
+                        s.suggestion_type === 'first_step' ? 'rgba(94,106,210,0.15)'
+                        : s.suggestion_type === 'issues' ? 'rgba(245,166,35,0.15)'
+                        : 'var(--secondary)',
+                      color:
+                        s.suggestion_type === 'first_step' ? '#5E6AD2'
+                        : s.suggestion_type === 'issues' ? '#D97706'
+                        : 'var(--muted-foreground)',
                     }}
                   >
-                    {s.suggestion_type === 'first_step' ? '次の一手' : 'リサーチ'}
+                    {s.suggestion_type === 'first_step' ? '次の一手'
+                      : s.suggestion_type === 'issues' ? '課題発見'
+                      : 'リサーチ'}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {new Date(s.created_at).toLocaleString('ja-JP', {
@@ -333,6 +595,14 @@ export default function TaskDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Output modal */}
+      <OutputModal
+        open={outputModal}
+        taskTitle={task.title}
+        onSave={handleOutputSave}
+        onSkip={handleOutputSkip}
+      />
     </div>
   )
 }

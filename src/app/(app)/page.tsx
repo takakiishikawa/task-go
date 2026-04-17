@@ -2,11 +2,19 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { getFocusTasks, getStalestTask, getLatestDesignLayer, updateTask } from '@/lib/db'
-import type { Task, DesignLayer } from '@/types/database'
+import {
+  getFocusTasks, getStalestTask, getLatestDesignLayer, updateTask,
+  getWeeklyFocusTasks, getWeeklySummary, initRecurringTasksIfNeeded,
+  checkAndGenerateRecurringTasks, type WeeklyFocusTaskWithTask,
+} from '@/lib/db'
+import type { Task, DesignLayer, WeeklySummary } from '@/types/database'
 import { StatusDot } from '@/components/ui/status-dot'
-import { formatDate, getDaysAgo, getMonthsFromNow } from '@/lib/date'
-import { CheckCircle2, Circle, ChevronRight, Sparkles, RefreshCw } from 'lucide-react'
+import { OutputModal } from '@/components/ui/output-modal'
+import { formatDate, getDaysAgo, getMonthsFromNow, getWeekStart, isFriday } from '@/lib/date'
+import {
+  CheckCircle2, Circle, ChevronRight, Sparkles, RefreshCw,
+  AlertTriangle, FileText, Target,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 type HealthStatus = 'green' | 'yellow' | 'red'
@@ -47,45 +55,95 @@ const healthBg: Record<HealthStatus, string> = {
 }
 
 export default function DashboardPage() {
-  const [focusTasks, setFocusTasks] = useState<Task[]>([])
+  const [weeklyFocusTasks, setWeeklyFocusTasks] = useState<WeeklyFocusTaskWithTask[]>([])
   const [stalestTask, setStalestTask] = useState<Task | null>(null)
   const [layers, setLayers] = useState<{
     core_value: DesignLayer | null
     roadmap: DesignLayer | null
     spec_design: DesignLayer | null
   }>({ core_value: null, roadmap: null, spec_design: null })
+  const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null)
   const [loadingAi, setLoadingAi] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isFridayBanner, setIsFridayBanner] = useState(false)
+  const [newRecurring, setNewRecurring] = useState<Task[]>([])
+
+  // Output modal for weekly focus done action
+  const [outputModal, setOutputModal] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null })
+
+  const thisWeek = getWeekStart(0)
 
   const loadData = useCallback(async () => {
     try {
-      const [focus, stale, cv, rm, sd] = await Promise.all([
-        getFocusTasks(),
+      // Init recurring tasks and check for due ones
+      await initRecurringTasksIfNeeded()
+      const generated = await checkAndGenerateRecurringTasks()
+      if (generated.length > 0) setNewRecurring(generated)
+
+      const [wfTasks, stale, cv, rm, sd, summary] = await Promise.all([
+        getWeeklyFocusTasks(thisWeek),
         getStalestTask(),
         getLatestDesignLayer('core_value'),
         getLatestDesignLayer('roadmap'),
         getLatestDesignLayer('spec_design'),
+        getWeeklySummary(thisWeek),
       ])
-      setFocusTasks(focus)
+      setWeeklyFocusTasks(wfTasks)
       setStalestTask(stale)
       setLayers({ core_value: cv, roadmap: rm, spec_design: sd })
+      setWeeklySummary(summary)
+      setIsFridayBanner(isFriday())
     } catch (e) {
       console.error(e)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [thisWeek])
 
   useEffect(() => { loadData() }, [loadData])
 
   const handleCompleteTask = async (task: Task) => {
+    setOutputModal({ open: true, task })
+  }
+
+  const handleOutputSave = async (outputNote: string) => {
+    const t = outputModal.task
+    if (!t) return
     try {
-      await updateTask(task.id, { status: 'done' })
-      setFocusTasks((prev) => prev.filter((t) => t.id !== task.id))
-      toast.success(`"${task.title}" を完了しました`)
+      await updateTask(t.id, {
+        status: 'done',
+        output_note: outputNote,
+        completed_at: new Date().toISOString(),
+      })
+      setWeeklyFocusTasks((prev) =>
+        prev.map((wf) => wf.task_id === t.id ? { ...wf, is_done: true, task: { ...wf.task, status: 'done' as const } } : wf)
+      )
+      toast.success(`"${t.title}" を完了しました`)
     } catch {
       toast.error('更新に失敗しました')
+    } finally {
+      setOutputModal({ open: false, task: null })
+    }
+  }
+
+  const handleOutputSkip = async () => {
+    const t = outputModal.task
+    if (!t) return
+    try {
+      await updateTask(t.id, {
+        status: 'done',
+        completed_at: new Date().toISOString(),
+      })
+      setWeeklyFocusTasks((prev) =>
+        prev.map((wf) => wf.task_id === t.id ? { ...wf, is_done: true, task: { ...wf.task, status: 'done' as const } } : wf)
+      )
+      toast.success(`"${t.title}" を完了しました`)
+    } catch {
+      toast.error('更新に失敗しました')
+    } finally {
+      setOutputModal({ open: false, task: null })
     }
   }
 
@@ -116,6 +174,28 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stalestTask?.id])
 
+  const handleGenerateSummary = async () => {
+    setSummaryLoading(true)
+    try {
+      const res = await fetch('/api/ai/summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weekStart: thisWeek }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setWeeklySummary((prev) => prev
+        ? { ...prev, content: data.summary }
+        : { id: '', user_id: '', week_start: thisWeek, content: data.summary, created_at: '' }
+      )
+      toast.success('週次サマリーを生成しました')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'サマリー生成に失敗しました')
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
+
   const cvHealth = getCoreValueHealth(layers.core_value)
   const rmHealth = getRoadmapHealth(layers.roadmap)
   const sdHealth = getSpecDesignHealth(layers.spec_design)
@@ -134,6 +214,57 @@ export default function DashboardPage() {
         <h2 className="text-lg font-semibold text-foreground">ダッシュボード</h2>
         <p className="text-xs mt-1 text-muted-foreground">設計貯金の状態を確認する</p>
       </div>
+
+      {/* New recurring tasks banner */}
+      {newRecurring.length > 0 && (
+        <div
+          className="rounded-lg p-4 mb-6 flex items-start gap-3"
+          style={{ background: 'rgba(245,166,35,0.08)', border: '1px solid rgba(245,166,35,0.25)' }}
+        >
+          <AlertTriangle style={{ width: 14, height: 14, color: '#F5A623', flexShrink: 0, marginTop: 1 }} />
+          <div>
+            <p className="text-xs font-medium" style={{ color: '#D97706' }}>
+              課題発見タスクが生成されました
+            </p>
+            <div className="mt-1 space-y-0.5">
+              {newRecurring.map((t) => (
+                <Link
+                  key={t.id}
+                  href={`/tasks/${t.id}`}
+                  className="text-xs block text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  → {t.title}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Friday banner */}
+      {isFridayBanner && (
+        <div
+          className="rounded-lg p-4 mb-6 flex items-center justify-between"
+          style={{ background: 'rgba(94,106,210,0.08)', border: '1px solid rgba(94,106,210,0.25)' }}
+        >
+          <div className="flex items-center gap-3">
+            <FileText style={{ width: 14, height: 14, color: '#5E6AD2', flexShrink: 0 }} />
+            <div>
+              <p className="text-xs font-medium" style={{ color: '#5E6AD2' }}>金曜日です！今週を振り返りましょう</p>
+              <p className="text-xs text-muted-foreground mt-0.5">週次サマリーを生成して今週の成果を記録しましょう</p>
+            </div>
+          </div>
+          <button
+            onClick={handleGenerateSummary}
+            disabled={summaryLoading}
+            className="text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+            style={{ background: '#5E6AD2', color: '#FFFFFF' }}
+          >
+            <Sparkles style={{ width: 11, height: 11 }} />
+            {summaryLoading ? '生成中...' : 'サマリー生成'}
+          </button>
+        </div>
+      )}
 
       {/* 設計貯金残高 */}
       <section className="mb-8">
@@ -173,55 +304,98 @@ export default function DashboardPage() {
       {/* 今週のフォーカス */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Target style={{ width: 12, height: 12 }} />
             今週のフォーカス
           </h3>
           <Link
-            href="/tasks"
+            href="/focus"
             className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
           >
-            フォーカスを編集 <ChevronRight style={{ width: 12, height: 12 }} />
+            フォーカスを管理 <ChevronRight style={{ width: 12, height: 12 }} />
           </Link>
         </div>
 
         <div className="rounded-lg overflow-hidden bg-card border border-border">
-          {focusTasks.length === 0 ? (
+          {weeklyFocusTasks.length === 0 ? (
             <div className="px-5 py-6 text-center">
-              <p className="text-xs text-muted-foreground">フォーカス中のタスクはありません</p>
-              <Link href="/tasks" className="inline-block mt-2 text-xs" style={{ color: '#5E6AD2' }}>
-                タスク一覧からフォーカスを設定する
+              <p className="text-xs text-muted-foreground">今週のフォーカスタスクがありません</p>
+              <Link href="/focus" className="inline-block mt-2 text-xs" style={{ color: '#5E6AD2' }}>
+                フォーカス管理から設定する
               </Link>
             </div>
           ) : (
-            focusTasks.map((task, i) => (
+            weeklyFocusTasks.map((wfTask, i) => (
               <div
-                key={task.id}
+                key={wfTask.id}
                 className="flex items-center gap-3 px-5 py-3.5"
-                style={{ borderBottom: i < focusTasks.length - 1 ? '1px solid var(--border)' : undefined }}
+                style={{ borderBottom: i < weeklyFocusTasks.length - 1 ? '1px solid var(--border)' : undefined }}
               >
                 <button
-                  onClick={() => handleCompleteTask(task)}
+                  onClick={() => !wfTask.is_done && handleCompleteTask(wfTask.task)}
                   className="flex-shrink-0 text-muted-foreground hover:text-green-500 transition-colors"
+                  disabled={wfTask.is_done}
                 >
-                  {task.status === 'done'
+                  {wfTask.is_done
                     ? <CheckCircle2 style={{ width: 16, height: 16, color: '#30A46C' }} />
                     : <Circle style={{ width: 16, height: 16 }} />
                   }
                 </button>
-                <Link href={`/tasks/${task.id}`} className="flex-1 min-w-0">
-                  <span className="text-sm block truncate text-foreground">{task.title}</span>
+                <Link href={`/tasks/${wfTask.task_id}`} className="flex-1 min-w-0">
+                  <span
+                    className="text-sm block truncate text-foreground"
+                    style={{ opacity: wfTask.is_done ? 0.4 : 1 }}
+                  >
+                    {wfTask.task.title}
+                  </span>
                 </Link>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <StatusDot
-                    variant={task.status === 'done' ? 'green' : task.status === 'in_progress' ? 'blue' : 'gray'}
-                    label={task.status === 'done' ? '完了' : task.status === 'in_progress' ? '進行中' : '未着手'}
+                    variant={wfTask.task.status === 'done' ? 'green' : wfTask.task.status === 'in_progress' ? 'blue' : 'gray'}
+                    label={wfTask.task.status === 'done' ? '完了' : wfTask.task.status === 'in_progress' ? '進行中' : '未着手'}
                   />
-                  {task.due_date && (
-                    <span className="text-xs text-muted-foreground">{formatDate(task.due_date)}</span>
+                  {wfTask.task.due_date && (
+                    <span className="text-xs text-muted-foreground">{formatDate(wfTask.task.due_date)}</span>
                   )}
                 </div>
               </div>
             ))
+          )}
+        </div>
+      </section>
+
+      {/* 週次サマリー */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <FileText style={{ width: 12, height: 12 }} />
+            今週のサマリー
+          </h3>
+          <button
+            onClick={handleGenerateSummary}
+            disabled={summaryLoading}
+            className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            <RefreshCw style={{ width: 12, height: 12 }} className={summaryLoading ? 'animate-spin' : ''} />
+            {weeklySummary ? '再生成' : '生成する'}
+          </button>
+        </div>
+
+        <div className="rounded-lg p-5 bg-card border border-border">
+          {summaryLoading ? (
+            <div className="space-y-2">
+              {[70, 90, 60].map((w, i) => (
+                <div key={i} className="h-3 rounded bg-border animate-pulse" style={{ width: `${w}%` }} />
+              ))}
+            </div>
+          ) : weeklySummary ? (
+            <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
+              {weeklySummary.content}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              今週完了したタスクのアウトプットをもとにAIがサマリーを生成します
+            </p>
           )}
         </div>
       </section>
@@ -273,6 +447,14 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
+
+      {/* Output modal */}
+      <OutputModal
+        open={outputModal.open}
+        taskTitle={outputModal.task?.title ?? ''}
+        onSave={handleOutputSave}
+        onSkip={handleOutputSkip}
+      />
     </div>
   )
 }

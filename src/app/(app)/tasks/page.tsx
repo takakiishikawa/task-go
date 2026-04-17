@@ -1,12 +1,17 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { getTasks, createTask, updateTask, deleteTask } from '@/lib/db'
-import type { Task, LayerType, TaskStatus } from '@/types/database'
+import {
+  getTasks, createTask, updateTask, deleteTask,
+  getTagsForTasks, getAllTags,
+} from '@/lib/db'
+import type { Task, LayerType, TaskStatus, Tag } from '@/types/database'
 import { StatusDot } from '@/components/ui/status-dot'
+import { TagBadge } from '@/components/ui/tag-badge'
+import { OutputModal } from '@/components/ui/output-modal'
 import { formatDate } from '@/lib/date'
-import { Plus, Star, Trash2, ChevronRight } from 'lucide-react'
+import { Plus, Star, Trash2, ChevronRight, Tag as TagIcon, X } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -41,7 +46,10 @@ const STATUS_CONFIG: Record<TaskStatus, { label: string; dot: 'gray' | 'blue' | 
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
+  const [tagsByTask, setTagsByTask] = useState<Record<string, Tag[]>>({})
+  const [allTags, setAllTags] = useState<Tag[]>([])
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
   const [form, setForm] = useState({
@@ -52,10 +60,22 @@ export default function TasksPage() {
   })
   const [creating, setCreating] = useState(false)
 
+  // Output modal state
+  const [outputModal, setOutputModal] = useState<{ open: boolean; task: Task | null }>({
+    open: false, task: null,
+  })
+  const pendingStatusRef = useRef<{ taskId: string; status: TaskStatus } | null>(null)
+
   const loadTasks = useCallback(async () => {
     try {
       const data = await getTasks()
       setTasks(data)
+      const [tagsMap, tags] = await Promise.all([
+        getTagsForTasks(data.map((t) => t.id)),
+        getAllTags(),
+      ])
+      setTagsByTask(tagsMap)
+      setAllTags(tags)
     } catch (e) {
       console.error(e)
       toast.error('タスクの読み込みに失敗しました')
@@ -66,9 +86,14 @@ export default function TasksPage() {
 
   useEffect(() => { loadTasks() }, [loadTasks])
 
-  const filteredTasks = tasks.filter((t) =>
-    statusFilter === 'all' ? true : t.status === statusFilter
-  )
+  const filteredTasks = tasks.filter((t) => {
+    if (statusFilter !== 'all' && t.status !== statusFilter) return false
+    if (tagFilter) {
+      const tags = tagsByTask[t.id] ?? []
+      if (!tags.some((tag) => tag.name === tagFilter)) return false
+    }
+    return true
+  })
 
   const groupedTasks = LAYER_ORDER.reduce<Record<LayerType, Task[]>>((acc, layer) => {
     acc[layer] = filteredTasks.filter((t) => t.layer_type === layer)
@@ -99,6 +124,60 @@ export default function TasksPage() {
     } catch (e) {
       console.error(e)
       toast.error('削除に失敗しました')
+    }
+  }
+
+  const handleStatusChange = async (task: Task, status: TaskStatus) => {
+    if (status === 'done' && task.status !== 'done') {
+      // Show output modal before saving
+      pendingStatusRef.current = { taskId: task.id, status }
+      setOutputModal({ open: true, task })
+      return
+    }
+    try {
+      const updated = await updateTask(task.id, { status })
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)))
+    } catch (e) {
+      console.error(e)
+      toast.error('更新に失敗しました')
+    }
+  }
+
+  const handleOutputSave = async (outputNote: string) => {
+    const pending = pendingStatusRef.current
+    if (!pending) return
+    try {
+      const updated = await updateTask(pending.taskId, {
+        status: 'done',
+        output_note: outputNote,
+        completed_at: new Date().toISOString(),
+      })
+      setTasks((prev) => prev.map((t) => (t.id === pending.taskId ? updated : t)))
+      toast.success('アウトプットを記録しました')
+    } catch (e) {
+      console.error(e)
+      toast.error('更新に失敗しました')
+    } finally {
+      pendingStatusRef.current = null
+      setOutputModal({ open: false, task: null })
+    }
+  }
+
+  const handleOutputSkip = async () => {
+    const pending = pendingStatusRef.current
+    if (!pending) return
+    try {
+      const updated = await updateTask(pending.taskId, {
+        status: 'done',
+        completed_at: new Date().toISOString(),
+      })
+      setTasks((prev) => prev.map((t) => (t.id === pending.taskId ? updated : t)))
+    } catch (e) {
+      console.error(e)
+      toast.error('更新に失敗しました')
+    } finally {
+      pendingStatusRef.current = null
+      setOutputModal({ open: false, task: null })
     }
   }
 
@@ -135,7 +214,7 @@ export default function TasksPage() {
   return (
     <div className="px-8 py-8 max-w-4xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-semibold text-foreground">タスク</h2>
           <p className="text-xs mt-1 text-muted-foreground">設計タスクを管理する</p>
@@ -152,21 +231,54 @@ export default function TasksPage() {
         </button>
       </div>
 
-      {/* Status filter */}
-      <div className="flex items-center gap-1 mb-6">
-        {(['all', 'pending', 'in_progress', 'done'] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className="text-xs px-3 py-1.5 rounded transition-colors"
-            style={{
-              background: statusFilter === s ? 'var(--accent)' : 'transparent',
-              color: statusFilter === s ? 'var(--foreground)' : 'var(--muted-foreground)',
-            }}
-          >
-            {s === 'all' ? 'すべて' : STATUS_CONFIG[s].label}
-          </button>
-        ))}
+      {/* Filters */}
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
+        {/* Status filter */}
+        <div className="flex items-center gap-1">
+          {(['all', 'pending', 'in_progress', 'done'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className="text-xs px-3 py-1.5 rounded transition-colors"
+              style={{
+                background: statusFilter === s ? 'var(--accent)' : 'transparent',
+                color: statusFilter === s ? 'var(--foreground)' : 'var(--muted-foreground)',
+              }}
+            >
+              {s === 'all' ? 'すべて' : STATUS_CONFIG[s].label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tag filter */}
+        {allTags.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <TagIcon style={{ width: 12, height: 12, color: 'var(--muted-foreground)' }} />
+            {allTags.map((tag) => (
+              <button
+                key={tag.id}
+                onClick={() => setTagFilter(tagFilter === tag.name ? null : tag.name)}
+                className="text-xs px-2 py-0.5 rounded-full transition-opacity"
+                style={{
+                  opacity: tagFilter && tagFilter !== tag.name ? 0.4 : 1,
+                  outline: tagFilter === tag.name ? '1px solid currentColor' : 'none',
+                  outlineOffset: 1,
+                }}
+              >
+                <TagBadge name={tag.name} size="xs" />
+              </button>
+            ))}
+            {tagFilter && (
+              <button
+                onClick={() => setTagFilter(null)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X style={{ width: 10, height: 10 }} />
+                クリア
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Task groups */}
@@ -190,18 +302,11 @@ export default function TasksPage() {
                   <TaskRow
                     key={task.id}
                     task={task}
+                    tags={tagsByTask[task.id] ?? []}
                     isLast={i === layerTasks.length - 1}
                     onToggleFocus={handleToggleFocus}
                     onDelete={handleDelete}
-                    onStatusChange={async (status) => {
-                      try {
-                        const updated = await updateTask(task.id, { status })
-                        setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)))
-                      } catch (e) {
-                        console.error(e)
-                        toast.error('更新に失敗しました')
-                      }
-                    }}
+                    onStatusChange={(status) => handleStatusChange(task, status)}
                   />
                 ))}
               </div>
@@ -294,22 +399,32 @@ export default function TasksPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Output modal */}
+      <OutputModal
+        open={outputModal.open}
+        taskTitle={outputModal.task?.title ?? ''}
+        onSave={handleOutputSave}
+        onSkip={handleOutputSkip}
+      />
     </div>
   )
 }
 
 function TaskRow({
   task,
+  tags,
   isLast,
   onToggleFocus,
   onDelete,
   onStatusChange,
 }: {
   task: Task
+  tags: Tag[]
   isLast: boolean
   onToggleFocus: (task: Task) => void
   onDelete: (task: Task) => void
-  onStatusChange: (status: TaskStatus) => Promise<void>
+  onStatusChange: (status: TaskStatus) => void
 }) {
   const statusConf = STATUS_CONFIG[task.status]
 
@@ -334,7 +449,7 @@ function TaskRow({
         />
       </button>
 
-      {/* Title */}
+      {/* Title + tags */}
       <Link href={`/tasks/${task.id}`} className="flex-1 min-w-0">
         <span
           className="text-sm block truncate transition-colors text-foreground hover:text-primary"
@@ -342,6 +457,13 @@ function TaskRow({
         >
           {task.title}
         </span>
+        {tags.length > 0 && (
+          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+            {tags.map((tag) => (
+              <TagBadge key={tag.id} name={tag.name} size="xs" />
+            ))}
+          </div>
+        )}
       </Link>
 
       {/* Due date */}
