@@ -48,7 +48,7 @@ export function OutputModal({ open, taskTitle, onSave, onSkip }: OutputModalProp
         </DialogHeader>
 
         <div className="mt-1">
-          <p className="text-xs text-muted-foreground mb-1 truncate">「{taskTitle}」</p>
+          <p className="text-sm text-muted-foreground mb-1 truncate">「{taskTitle}」</p>
           <p className="text-sm font-medium text-foreground mb-4">
             このタスクで出したアウトプット・バリューを一言で記録しましょう
           </p>
@@ -69,14 +69,14 @@ export function OutputModal({ open, taskTitle, onSave, onSkip }: OutputModalProp
             <button
               onClick={handleSkip}
               disabled={saving}
-              className="text-xs px-3 py-2 rounded transition-colors bg-secondary text-muted-foreground hover:text-foreground"
+              className="text-sm px-3 py-2 rounded transition-colors bg-secondary text-muted-foreground hover:text-foreground"
             >
               スキップ
             </button>
             <button
               onClick={handleSave}
               disabled={saving || !note.trim()}
-              className="text-xs px-4 py-2 rounded transition-colors disabled:opacity-50"
+              className="text-sm px-4 py-2 rounded transition-colors disabled:opacity-50"
               style={{ background: '#30A46C', color: '#FFFFFF' }}
             >
               {saving ? '保存中...' : '記録する'}

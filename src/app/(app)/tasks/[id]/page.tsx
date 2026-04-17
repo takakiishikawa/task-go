@@ -284,7 +284,7 @@ export default function TaskDetailPage() {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-xs mb-6 text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-1.5 text-sm mb-6 text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft style={{ width: 13, height: 13 }} />
         タスク一覧に戻る
@@ -308,14 +308,14 @@ export default function TaskDetailPage() {
               <>
                 <button
                   onClick={() => setEditMode(false)}
-                  className="text-xs px-2.5 py-1.5 rounded bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-sm px-2.5 py-1.5 rounded bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                 >
                   キャンセル
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="text-xs px-2.5 py-1.5 rounded disabled:opacity-50 transition-colors"
+                  className="text-sm px-2.5 py-1.5 rounded disabled:opacity-50 transition-colors"
                   style={{ background: '#5E6AD2', color: '#FFFFFF' }}
                 >
                   {saving ? '保存中...' : '保存'}
@@ -324,7 +324,7 @@ export default function TaskDetailPage() {
             ) : (
               <button
                 onClick={() => setEditMode(true)}
-                className="text-xs px-2.5 py-1.5 rounded bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm px-2.5 py-1.5 rounded bg-secondary text-muted-foreground hover:text-foreground transition-colors"
               >
                 編集
               </button>
@@ -335,60 +335,60 @@ export default function TaskDetailPage() {
         {/* Meta fields */}
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div>
-            <label className="text-xs block mb-1 text-muted-foreground">レイヤー</label>
+            <label className="text-sm block mb-1 text-muted-foreground">レイヤー</label>
             {editMode ? (
               <Select
                 value={editForm.layer_type}
                 onValueChange={(v) => setEditForm((f) => ({ ...f, layer_type: v as LayerType }))}
               >
-                <SelectTrigger className="text-xs h-8 bg-input border-border text-foreground">
+                <SelectTrigger className="text-sm h-8 bg-input border-border text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border">
                   {(Object.keys(LAYER_LABELS) as LayerType[]).map((l) => (
-                    <SelectItem key={l} value={l} className="text-foreground text-xs">
+                    <SelectItem key={l} value={l} className="text-foreground text-sm">
                       {LAYER_LABELS[l]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             ) : (
-              <span className="text-xs text-foreground">{LAYER_LABELS[task.layer_type]}</span>
+              <span className="text-sm text-foreground">{LAYER_LABELS[task.layer_type]}</span>
             )}
           </div>
 
           <div>
-            <label className="text-xs block mb-1 text-muted-foreground">ステータス</label>
+            <label className="text-sm block mb-1 text-muted-foreground">ステータス</label>
             {editMode ? (
               <Select
                 value={editForm.status}
                 onValueChange={(v) => setEditForm((f) => ({ ...f, status: v as TaskStatus }))}
               >
-                <SelectTrigger className="text-xs h-8 bg-input border-border text-foreground">
+                <SelectTrigger className="text-sm h-8 bg-input border-border text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border">
                   {(Object.keys(STATUS_CONFIG) as TaskStatus[]).map((s) => (
-                    <SelectItem key={s} value={s} className="text-foreground text-xs">
+                    <SelectItem key={s} value={s} className="text-foreground text-sm">
                       {STATUS_CONFIG[s].label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             ) : (
-              <span className="text-xs text-foreground">{statusConf.label}</span>
+              <span className="text-sm text-foreground">{statusConf.label}</span>
             )}
           </div>
 
           <div>
-            <label className="text-xs block mb-1 text-muted-foreground">期日</label>
+            <label className="text-sm block mb-1 text-muted-foreground">期日</label>
             {editMode ? (
               <DatePicker
                 value={editForm.due_date}
                 onChange={(v) => setEditForm((f) => ({ ...f, due_date: v }))}
               />
             ) : (
-              <span className="text-xs text-foreground">
+              <span className="text-sm text-foreground">
                 {task.due_date
                   ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' })
                   : '—'}
@@ -399,7 +399,7 @@ export default function TaskDetailPage() {
 
         {/* Description */}
         <div className="mb-4">
-          <label className="text-xs block mb-1 text-muted-foreground">説明</label>
+          <label className="text-sm block mb-1 text-muted-foreground">説明</label>
           {editMode ? (
             <Textarea
               value={editForm.description}
@@ -418,7 +418,7 @@ export default function TaskDetailPage() {
         {/* Output note (if done) */}
         {task.status === 'done' && (
           <div className="mb-4 rounded p-3 border" style={{ background: 'rgba(48,164,108,0.06)', borderColor: 'rgba(48,164,108,0.2)' }}>
-            <label className="text-xs block mb-1 font-medium" style={{ color: '#30A46C' }}>アウトプット記録</label>
+            <label className="text-sm block mb-1 font-medium" style={{ color: '#30A46C' }}>アウトプット記録</label>
             <p className="text-sm text-muted-foreground">
               {task.output_note || '（記録なし）'}
             </p>
@@ -432,7 +432,7 @@ export default function TaskDetailPage() {
 
         {/* Tags */}
         <div>
-          <label className="text-xs block mb-1.5 text-muted-foreground flex items-center gap-1">
+          <label className="text-sm block mb-1.5 text-muted-foreground flex items-center gap-1">
             <TagIcon style={{ width: 11, height: 11 }} />
             タグ
           </label>
@@ -458,7 +458,7 @@ export default function TaskDetailPage() {
                   }
                 }}
                 placeholder="タグを追加..."
-                className="text-xs px-2 py-0.5 rounded outline-none bg-input border border-border text-foreground placeholder:text-muted-foreground focus:border-ring"
+                className="text-sm px-2 py-0.5 rounded outline-none bg-input border border-border text-foreground placeholder:text-muted-foreground focus:border-ring"
                 style={{ width: 100 }}
                 list="tag-suggestions"
               />
@@ -481,7 +481,7 @@ export default function TaskDetailPage() {
             <button
               onClick={handleSuggestTags}
               disabled={tagSuggesting}
-              className="flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors disabled:opacity-50"
+              className="flex items-center gap-1 text-sm px-2 py-0.5 rounded transition-colors disabled:opacity-50"
               style={{ color: '#5E6AD2', border: '1px solid rgba(94,106,210,0.3)', background: 'transparent' }}
               onMouseEnter={(e) => { if (!tagSuggesting) e.currentTarget.style.background = 'rgba(94,106,210,0.1)' }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
@@ -496,11 +496,11 @@ export default function TaskDetailPage() {
       {/* Issue Discovery AI (for recurring issue tasks) */}
       {isIssuetask && (
         <div className="rounded-lg p-5 mb-6 bg-card border border-border">
-          <h3 className="text-xs font-medium mb-3 flex items-center gap-2 text-muted-foreground">
+          <h3 className="text-sm font-medium mb-3 flex items-center gap-2 text-muted-foreground">
             <AlertTriangle style={{ width: 12, height: 12, color: '#F5A623' }} />
             課題発見AI
           </h3>
-          <p className="text-xs text-muted-foreground mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             {task.title.startsWith('【短期】')
               ? '現在の進行中タスクを分析し、今すぐ対処すべき重要な課題をトップ3で発見します。'
               : '3〜12ヶ月のスパンで見た時に対処すべき重要な課題をトップ3で発見します。'
@@ -509,7 +509,7 @@ export default function TaskDetailPage() {
           <button
             onClick={handleIssueDiscovery}
             disabled={aiLoading !== null}
-            className="flex items-center gap-2 text-xs px-4 py-2.5 rounded transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 text-sm px-4 py-2.5 rounded transition-colors disabled:opacity-50"
             style={{ background: 'rgba(245,166,35,0.12)', color: '#D97706', border: '1px solid rgba(245,166,35,0.3)' }}
             onMouseEnter={(e) => { if (!aiLoading) e.currentTarget.style.background = 'rgba(245,166,35,0.2)' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(245,166,35,0.12)' }}
@@ -523,7 +523,7 @@ export default function TaskDetailPage() {
       {/* AI buttons (non-issue tasks) */}
       {!isIssuetask && (
         <div className="rounded-lg p-5 mb-6 bg-card border border-border">
-          <h3 className="text-xs font-medium mb-4 flex items-center gap-2 text-muted-foreground">
+          <h3 className="text-sm font-medium mb-4 flex items-center gap-2 text-muted-foreground">
             <Sparkles style={{ width: 12, height: 12, color: '#5E6AD2' }} />
             AIサジェスト
           </h3>
@@ -531,7 +531,7 @@ export default function TaskDetailPage() {
             <button
               onClick={() => handleAiSuggest('first_step')}
               disabled={aiLoading !== null}
-              className="flex items-center gap-2 text-xs px-4 py-2.5 rounded border transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 text-sm px-4 py-2.5 rounded border transition-colors disabled:opacity-50"
               style={{ border: '1px solid #5E6AD2', color: '#5E6AD2', background: 'transparent' }}
               onMouseEnter={(e) => { if (!aiLoading) e.currentTarget.style.background = 'rgba(94,106,210,0.1)' }}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -543,7 +543,7 @@ export default function TaskDetailPage() {
             <button
               onClick={() => handleAiSuggest('research')}
               disabled={aiLoading !== null}
-              className="flex items-center gap-2 text-xs px-4 py-2.5 rounded border transition-colors disabled:opacity-50 border-border text-muted-foreground hover:border-ring hover:text-foreground"
+              className="flex items-center gap-2 text-sm px-4 py-2.5 rounded border transition-colors disabled:opacity-50 border-border text-muted-foreground hover:border-ring hover:text-foreground"
               style={{ background: 'transparent' }}
             >
               <BookOpen style={{ width: 12, height: 12 }} />
@@ -587,7 +587,7 @@ export default function TaskDetailPage() {
                     })}
                   </span>
                 </div>
-                <p className="text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
                   {s.content}
                 </p>
               </div>

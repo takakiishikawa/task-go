@@ -167,7 +167,7 @@ function LayersContent() {
         </div>
         <button
           onClick={() => { setCreateMode(true); setEditingId(null); setForm({ title: '', content: '', cover_until: undefined }) }}
-          className="flex items-center gap-1.5 text-xs px-3 py-2 rounded transition-colors"
+          className="flex items-center gap-1.5 text-sm px-3 py-2 rounded transition-colors"
           style={{ background: '#5E6AD2', color: '#FFFFFF' }}
           onMouseEnter={(e) => (e.currentTarget.style.background = '#4F5BC0')}
           onMouseLeave={(e) => (e.currentTarget.style.background = '#5E6AD2')}
@@ -183,7 +183,7 @@ function LayersContent() {
           <button
             key={tab}
             onClick={() => { setActiveTab(tab); setCreateMode(false); setEditingId(null) }}
-            className="text-xs px-4 py-2.5 transition-colors -mb-px"
+            className="text-sm px-4 py-2.5 transition-colors -mb-px"
             style={{
               color: activeTab === tab ? 'var(--foreground)' : 'var(--muted-foreground)',
               borderBottom: activeTab === tab ? '2px solid #5E6AD2' : '2px solid transparent',
@@ -207,7 +207,7 @@ function LayersContent() {
             />
             {config.showCoverUntil && (
               <div>
-                <label className="text-xs block mb-1 text-muted-foreground">カバー期限</label>
+                <label className="text-sm block mb-1 text-muted-foreground">カバー期限</label>
                 <DatePicker
                   value={form.cover_until}
                   onChange={(v) => setForm((f) => ({ ...f, cover_until: v }))}
@@ -225,14 +225,14 @@ function LayersContent() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setCreateMode(false)}
-                className="text-xs px-3 py-1.5 rounded bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm px-3 py-1.5 rounded bg-secondary text-muted-foreground hover:text-foreground transition-colors"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleCreate}
                 disabled={!form.title.trim() || saving}
-                className="text-xs px-3 py-1.5 rounded disabled:opacity-50 transition-colors"
+                className="text-sm px-3 py-1.5 rounded disabled:opacity-50 transition-colors"
                 style={{ background: '#5E6AD2', color: '#FFFFFF' }}
               >
                 {saving ? '作成中...' : '作成'}
@@ -244,10 +244,10 @@ function LayersContent() {
 
       {/* Layer list */}
       {loading ? (
-        <div className="text-xs text-center py-8 text-muted-foreground">読み込み中...</div>
+        <div className="text-sm text-center py-8 text-muted-foreground">読み込み中...</div>
       ) : layers.length === 0 && !createMode ? (
         <div className="rounded-lg px-5 py-10 text-center bg-card border border-border">
-          <p className="text-xs text-muted-foreground">ドキュメントがありません</p>
+          <p className="text-sm text-muted-foreground">ドキュメントがありません</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -271,7 +271,7 @@ function LayersContent() {
                     />
                     {config.showCoverUntil && (
                       <div>
-                        <label className="text-xs block mb-1 text-muted-foreground">カバー期限</label>
+                        <label className="text-sm block mb-1 text-muted-foreground">カバー期限</label>
                         <DatePicker
                           value={form.cover_until}
                           onChange={(v) => setForm((f) => ({ ...f, cover_until: v }))}
@@ -345,7 +345,7 @@ function LayersContent() {
                     </div>
 
                     {layer.content && (
-                      <p className="text-xs leading-relaxed mt-3 whitespace-pre-wrap text-muted-foreground">
+                      <p className="text-sm leading-relaxed mt-3 whitespace-pre-wrap text-muted-foreground">
                         {layer.content}
                       </p>
                     )}

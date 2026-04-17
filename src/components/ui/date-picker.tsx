@@ -39,7 +39,7 @@ export function DatePicker({ value, onChange, placeholder = '期日を選択', c
     <Popover>
       <PopoverTrigger
         className={cn(
-          'flex items-center gap-2 text-xs px-3 py-2 rounded border w-full text-left transition-colors',
+          'flex items-center gap-2 text-sm px-3 py-2 rounded border w-full text-left transition-colors',
           'bg-input border-border hover:border-ring/60 focus:outline-none focus:border-primary',
           !value ? 'text-muted-foreground' : 'text-foreground',
           className

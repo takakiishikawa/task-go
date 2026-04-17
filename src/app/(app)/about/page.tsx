@@ -65,8 +65,8 @@ export default function AboutPage() {
                   {item.num}
                 </span>
                 <div>
-                  <p className="text-xs font-medium text-foreground mb-1">{item.title}</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{item.body}</p>
+                  <p className="text-sm font-medium text-foreground mb-1">{item.title}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.body}</p>
                 </div>
               </div>
             </div>
@@ -100,8 +100,8 @@ export default function AboutPage() {
               style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
             >
               <Icon className="w-4 h-4 mb-2" style={{ color: '#5E6AD2' }} />
-              <p className="text-xs font-medium text-foreground mb-1.5">{title}</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">{body}</p>
+              <p className="text-sm font-medium text-foreground mb-1.5">{title}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
             </div>
           ))}
         </div>
@@ -149,9 +149,9 @@ export default function AboutPage() {
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-xs text-muted-foreground font-mono">{item.step}</span>
                   <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs font-medium text-foreground">{item.title}</span>
+                  <span className="text-sm font-medium text-foreground">{item.title}</span>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{item.detail}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.detail}</p>
               </div>
             </div>
           ))}
@@ -171,7 +171,7 @@ export default function AboutPage() {
               'コアバリュー・解く/解かないことが定期的にアップデートされている',
               'この「貯金残高」が常に可視化されていて、減ったら補充できる',
             ].map((item) => (
-              <li key={item} className="flex items-start gap-2 text-xs text-muted-foreground">
+              <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
                 <span style={{ color: '#30A46C' }} className="mt-0.5 flex-shrink-0">✓</span>
                 {item}
               </li>

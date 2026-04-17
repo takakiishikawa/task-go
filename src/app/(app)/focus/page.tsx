@@ -135,7 +135,7 @@ export default function FocusPage() {
             <button
               key={offset}
               onClick={() => setActiveTab(offset)}
-              className="relative flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition-colors"
+              className="relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors"
               style={{
                 color: activeTab === offset ? 'var(--foreground)' : 'var(--muted-foreground)',
                 borderBottom: activeTab === offset ? '2px solid #5E6AD2' : '2px solid transparent',
@@ -163,10 +163,10 @@ export default function FocusPage() {
       {/* Focus list */}
       <div className="rounded-lg overflow-hidden border border-border bg-card mb-4">
         {isLoading ? (
-          <div className="px-5 py-8 text-center text-xs text-muted-foreground">読み込み中...</div>
+          <div className="px-5 py-8 text-center text-sm text-muted-foreground">読み込み中...</div>
         ) : currentFocus.length === 0 ? (
           <div className="px-5 py-8 text-center">
-            <p className="text-xs text-muted-foreground mb-3">
+            <p className="text-sm text-muted-foreground mb-3">
               {formatWeekLabel(activeTab)}のフォーカスタスクがありません
             </p>
           </div>
@@ -237,7 +237,7 @@ export default function FocusPage() {
       {currentFocus.length < 5 && (
         <button
           onClick={openAddDialog}
-          className="flex items-center gap-2 text-xs px-4 py-2.5 rounded border transition-colors"
+          className="flex items-center gap-2 text-sm px-4 py-2.5 rounded border transition-colors"
           style={{ border: '1px solid var(--border)', color: 'var(--muted-foreground)' }}
           onMouseEnter={(e) => {
             e.currentTarget.style.borderColor = '#5E6AD2'
@@ -273,7 +273,7 @@ export default function FocusPage() {
 
             <div className="space-y-1 max-h-64 overflow-y-auto">
               {filteredTasks.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-4 text-center">
+                <p className="text-sm text-muted-foreground py-4 text-center">
                   {taskSearch ? '該当するタスクがありません' : '追加できるタスクがありません'}
                 </p>
               ) : (

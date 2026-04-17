@@ -97,7 +97,7 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium transition-colors',
+                'flex items-center gap-2.5 px-3 py-2 rounded text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-accent text-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
@@ -119,7 +119,7 @@ export function Sidebar() {
         <Link
           href="/about"
           className={cn(
-            'flex items-center gap-2.5 px-3 py-2 rounded text-xs w-full transition-colors',
+            'flex items-center gap-2.5 px-3 py-2 rounded text-sm w-full transition-colors',
             pathname === '/about'
               ? 'bg-accent text-foreground'
               : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
@@ -132,7 +132,7 @@ export function Sidebar() {
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
-          className="flex items-center gap-2.5 px-3 py-2 rounded text-xs w-full transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/60"
+          className="flex items-center gap-2.5 px-3 py-2 rounded text-sm w-full transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/60"
         >
           {theme === 'dark'
             ? <Sun style={{ width: 14, height: 14 }} className="flex-shrink-0" />
@@ -146,7 +146,7 @@ export function Sidebar() {
           <button
             onClick={() => setAppsOpen((o) => !o)}
             className={cn(
-              'flex items-center gap-2.5 px-3 py-2 rounded text-xs w-full transition-colors',
+              'flex items-center gap-2.5 px-3 py-2 rounded text-sm w-full transition-colors',
               appsOpen
                 ? 'bg-accent text-foreground'
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
@@ -178,7 +178,7 @@ export function Sidebar() {
                       className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ background: app.color }}
                     />
-                    <span className="text-xs font-medium text-foreground flex-1">{app.name}</span>
+                    <span className="text-sm font-medium text-foreground flex-1">{app.name}</span>
                     <span className="text-xs" style={{ color: app.color, opacity: 0.8 }}>現在</span>
                   </div>
                 ) : (
@@ -192,7 +192,7 @@ export function Sidebar() {
                       className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ background: app.color }}
                     />
-                    <span className="text-xs">{app.name}</span>
+                    <span className="text-sm">{app.name}</span>
                   </a>
                 )
               })}
@@ -203,7 +203,7 @@ export function Sidebar() {
         {/* Sign out */}
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-2.5 px-3 py-2 rounded text-xs w-full transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/60"
+          className="flex items-center gap-2.5 px-3 py-2 rounded text-sm w-full transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/60"
         >
           <LogOut style={{ width: 14, height: 14 }} className="flex-shrink-0" />
           ログアウト

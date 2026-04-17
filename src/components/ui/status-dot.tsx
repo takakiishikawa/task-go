@@ -24,7 +24,7 @@ export function StatusDot({ variant, label, className }: StatusDotProps) {
         style={{ width: 6, height: 6, background: colorMap[variant] }}
       />
       {label && (
-        <span className="text-xs" style={{ color: '#6B6B6B' }}>
+        <span className="text-sm" style={{ color: '#6B6B6B' }}>
           {label}
         </span>
       )}

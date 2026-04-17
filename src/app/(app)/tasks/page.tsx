@@ -221,7 +221,7 @@ export default function TasksPage() {
         </div>
         <button
           onClick={() => setCreateOpen(true)}
-          className="flex items-center gap-1.5 text-xs px-3 py-2 rounded transition-colors"
+          className="flex items-center gap-1.5 text-sm px-3 py-2 rounded transition-colors"
           style={{ background: '#5E6AD2', color: '#FFFFFF' }}
           onMouseEnter={(e) => (e.currentTarget.style.background = '#4F5BC0')}
           onMouseLeave={(e) => (e.currentTarget.style.background = '#5E6AD2')}
@@ -239,7 +239,7 @@ export default function TasksPage() {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className="text-xs px-3 py-1.5 rounded transition-colors"
+              className="text-sm px-3 py-1.5 rounded transition-colors"
               style={{
                 background: statusFilter === s ? 'var(--accent)' : 'transparent',
                 color: statusFilter === s ? 'var(--foreground)' : 'var(--muted-foreground)',
@@ -271,7 +271,7 @@ export default function TasksPage() {
             {tagFilter && (
               <button
                 onClick={() => setTagFilter(null)}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X style={{ width: 10, height: 10 }} />
                 クリア
@@ -316,7 +316,7 @@ export default function TasksPage() {
 
         {filteredTasks.length === 0 && (
           <div className="rounded-lg border border-border bg-card px-5 py-10 text-center">
-            <p className="text-xs text-muted-foreground">タスクがありません</p>
+            <p className="text-sm text-muted-foreground">タスクがありません</p>
           </div>
         )}
       </div>
@@ -329,7 +329,7 @@ export default function TasksPage() {
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div>
-              <label className="text-xs block mb-1.5 text-muted-foreground">タイトル *</label>
+              <label className="text-sm block mb-1.5 text-muted-foreground">タイトル *</label>
               <input
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
@@ -341,7 +341,7 @@ export default function TasksPage() {
             </div>
 
             <div>
-              <label className="text-xs block mb-1.5 text-muted-foreground">レイヤー</label>
+              <label className="text-sm block mb-1.5 text-muted-foreground">レイヤー</label>
               <Select
                 value={form.layer_type}
                 onValueChange={(v) => setForm((f) => ({ ...f, layer_type: v as LayerType }))}
@@ -351,7 +351,7 @@ export default function TasksPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border">
                   {LAYER_ORDER.map((l) => (
-                    <SelectItem key={l} value={l} className="text-foreground text-xs">
+                    <SelectItem key={l} value={l} className="text-foreground text-sm">
                       {LAYER_LABELS[l]}
                     </SelectItem>
                   ))}
@@ -360,7 +360,7 @@ export default function TasksPage() {
             </div>
 
             <div>
-              <label className="text-xs block mb-1.5 text-muted-foreground">期日</label>
+              <label className="text-sm block mb-1.5 text-muted-foreground">期日</label>
               <DatePicker
                 value={form.due_date}
                 onChange={(v) => setForm((f) => ({ ...f, due_date: v }))}
@@ -368,7 +368,7 @@ export default function TasksPage() {
             </div>
 
             <div>
-              <label className="text-xs block mb-1.5 text-muted-foreground">説明</label>
+              <label className="text-sm block mb-1.5 text-muted-foreground">説明</label>
               <Textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
@@ -381,14 +381,14 @@ export default function TasksPage() {
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setCreateOpen(false)}
-                className="text-xs px-3 py-2 rounded transition-colors bg-secondary text-muted-foreground hover:text-foreground"
+                className="text-sm px-3 py-2 rounded transition-colors bg-secondary text-muted-foreground hover:text-foreground"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleCreate}
                 disabled={!form.title.trim() || creating}
-                className="text-xs px-3 py-2 rounded transition-colors disabled:opacity-50"
+                className="text-sm px-3 py-2 rounded transition-colors disabled:opacity-50"
                 style={{ background: '#5E6AD2', color: '#FFFFFF' }}
                 onMouseEnter={(e) => !creating && (e.currentTarget.style.background = '#4F5BC0')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = '#5E6AD2')}
@@ -478,7 +478,7 @@ function TaskRow({
         <select
           value={task.status}
           onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
-          className="text-xs rounded px-2 py-1 outline-none cursor-pointer bg-secondary border-none text-foreground"
+          className="text-sm rounded px-2 py-1 outline-none cursor-pointer bg-secondary border-none text-foreground"
         >
           <option value="pending">未着手</option>
           <option value="in_progress">進行中</option>

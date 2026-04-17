@@ -223,7 +223,7 @@ export default function DashboardPage() {
         >
           <AlertTriangle style={{ width: 14, height: 14, color: '#F5A623', flexShrink: 0, marginTop: 1 }} />
           <div>
-            <p className="text-xs font-medium" style={{ color: '#D97706' }}>
+            <p className="text-sm font-medium" style={{ color: '#D97706' }}>
               課題発見タスクが生成されました
             </p>
             <div className="mt-1 space-y-0.5">
@@ -231,7 +231,7 @@ export default function DashboardPage() {
                 <Link
                   key={t.id}
                   href={`/tasks/${t.id}`}
-                  className="text-xs block text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-sm block text-muted-foreground hover:text-foreground transition-colors"
                 >
                   → {t.title}
                 </Link>
@@ -250,14 +250,14 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <FileText style={{ width: 14, height: 14, color: '#5E6AD2', flexShrink: 0 }} />
             <div>
-              <p className="text-xs font-medium" style={{ color: '#5E6AD2' }}>金曜日です！今週を振り返りましょう</p>
+              <p className="text-sm font-medium" style={{ color: '#5E6AD2' }}>金曜日です！今週を振り返りましょう</p>
               <p className="text-xs text-muted-foreground mt-0.5">週次サマリーを生成して今週の成果を記録しましょう</p>
             </div>
           </div>
           <button
             onClick={handleGenerateSummary}
             disabled={summaryLoading}
-            className="text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+            className="text-sm px-3 py-1.5 rounded transition-colors disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
             style={{ background: '#5E6AD2', color: '#FFFFFF' }}
           >
             <Sparkles style={{ width: 11, height: 11 }} />
@@ -283,7 +283,7 @@ export default function DashboardPage() {
               className="block rounded-lg p-5 transition-colors bg-card border border-border hover:bg-accent/30"
             >
               <div className="flex items-start justify-between mb-3">
-                <span className="text-xs font-medium text-foreground">{title}</span>
+                <span className="text-sm font-medium text-foreground">{title}</span>
                 <span
                   className="text-xs px-2 py-0.5 rounded-full font-medium"
                   style={{
@@ -294,7 +294,7 @@ export default function DashboardPage() {
                   {health.status === 'green' ? '健康' : health.status === 'yellow' ? '注意' : '要更新'}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">{health.label}</p>
+              <p className="text-sm text-muted-foreground">{health.label}</p>
               <p className="text-xs mt-1" style={{ color: 'var(--border)' }}>{sub}</p>
             </Link>
           ))}
@@ -310,7 +310,7 @@ export default function DashboardPage() {
           </h3>
           <Link
             href="/focus"
-            className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            className="text-sm flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
           >
             フォーカスを管理 <ChevronRight style={{ width: 12, height: 12 }} />
           </Link>
@@ -319,8 +319,8 @@ export default function DashboardPage() {
         <div className="rounded-lg overflow-hidden bg-card border border-border">
           {weeklyFocusTasks.length === 0 ? (
             <div className="px-5 py-6 text-center">
-              <p className="text-xs text-muted-foreground">今週のフォーカスタスクがありません</p>
-              <Link href="/focus" className="inline-block mt-2 text-xs" style={{ color: '#5E6AD2' }}>
+              <p className="text-sm text-muted-foreground">今週のフォーカスタスクがありません</p>
+              <Link href="/focus" className="inline-block mt-2 text-sm" style={{ color: '#5E6AD2' }}>
                 フォーカス管理から設定する
               </Link>
             </div>
@@ -374,7 +374,7 @@ export default function DashboardPage() {
           <button
             onClick={handleGenerateSummary}
             disabled={summaryLoading}
-            className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            className="text-sm flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
           >
             <RefreshCw style={{ width: 12, height: 12 }} className={summaryLoading ? 'animate-spin' : ''} />
             {weeklySummary ? '再生成' : '生成する'}
@@ -393,7 +393,7 @@ export default function DashboardPage() {
               {weeklySummary.summary}
             </p>
           ) : (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               今週完了したタスクのアウトプットをもとにAIがサマリーを生成します
             </p>
           )}
@@ -411,7 +411,7 @@ export default function DashboardPage() {
             <button
               onClick={handleFetchAiSuggestion}
               disabled={loadingAi}
-              className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              className="text-sm flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
               <RefreshCw style={{ width: 12, height: 12 }} className={loadingAi ? 'animate-spin' : ''} />
               再取得
@@ -421,12 +421,12 @@ export default function DashboardPage() {
           <div className="rounded-lg p-5 bg-card border border-border">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="text-xs font-medium text-foreground">{stalestTask.title}</p>
+                <p className="text-sm font-medium text-foreground">{stalestTask.title}</p>
                 <p className="text-xs mt-0.5 text-muted-foreground">最も長く止まっているタスク</p>
               </div>
               <Link
                 href={`/tasks/${stalestTask.id}`}
-                className="text-xs flex items-center gap-1 flex-shrink-0 ml-4 transition-colors"
+                className="text-sm flex items-center gap-1 flex-shrink-0 ml-4 transition-colors"
                 style={{ color: '#5E6AD2' }}
               >
                 詳しく聞く <ChevronRight style={{ width: 12, height: 12 }} />
@@ -440,7 +440,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : aiSuggestion ? (
-              <div className="mt-3 text-xs leading-relaxed whitespace-pre-wrap rounded p-3 bg-muted text-muted-foreground border border-border">
+              <div className="mt-3 text-sm leading-relaxed whitespace-pre-wrap rounded p-3 bg-muted text-muted-foreground border border-border">
                 {aiSuggestion}
               </div>
             ) : null}
