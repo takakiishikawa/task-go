@@ -11,8 +11,7 @@ import type { Task, DesignLayer, WeeklySummary } from '@/types/database'
 import { StatusDot } from '@/components/ui/status-dot'
 import { OutputModal } from '@/components/ui/output-modal'
 import { formatDate, getDaysAgo, getMonthsFromNow, getWeekStart, isFriday } from '@/lib/date'
-import { Button, PageHeader, Section, EmptyState } from '@takaki/go-design-system'
-import { HEALTH_BADGE_CLASS } from '@/lib/constants'
+import { Button, PageHeader, Section, EmptyState, Badge } from '@takaki/go-design-system'
 import {
   CheckCircle2, Circle, ChevronRight, Sparkles, RefreshCw,
   AlertTriangle, FileText, Target,
@@ -221,16 +220,20 @@ export default function DashboardPage() {
       <Section title="設計貯金残高">
         <div className="grid grid-cols-3 gap-4">
           {[
-            { title: 'コアバリュー',   health: cvHealth, sub: '90日以内更新で健康',   href: '/layers?tab=core_value' },
-            { title: 'ロードマップ',   health: rmHealth, sub: '2年以上カバーで健康',   href: '/layers?tab=roadmap' },
-            { title: '仕様・デザイン', health: sdHealth, sub: '6ヶ月以上カバーで健康', href: '/layers?tab=spec_design' },
+            { title: 'コアバリュー',   health: cvHealth, sub: '90日以内更新で良好',   href: '/layers?tab=core_value' },
+            { title: 'ロードマップ',   health: rmHealth, sub: '2年以上カバーで良好',   href: '/layers?tab=roadmap' },
+            { title: '仕様・デザイン', health: sdHealth, sub: '6ヶ月以上カバーで良好', href: '/layers?tab=spec_design' },
           ].map(({ title, health, sub, href }) => (
             <Link key={title} href={href} className="block rounded-lg p-5 transition-colors bg-card border border-border hover:bg-accent/30">
               <div className="flex items-start justify-between mb-3">
                 <span className="text-sm font-medium">{title}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${HEALTH_BADGE_CLASS[health.status]}`}>
-                  {health.status === 'green' ? '健康' : health.status === 'yellow' ? '注意' : '要更新'}
-                </span>
+                <Badge className={
+                  health.status === 'green'  ? 'bg-success-subtle text-success hover:bg-success-subtle' :
+                  health.status === 'yellow' ? 'bg-warning-subtle text-warning hover:bg-warning-subtle' :
+                                               'bg-danger-subtle text-destructive hover:bg-danger-subtle'
+                }>
+                  {health.status === 'green' ? '良好' : health.status === 'yellow' ? '注意' : '要更新'}
+                </Badge>
               </div>
               <p className="text-sm text-muted-foreground">{health.label}</p>
               <p className="text-xs mt-1 text-muted-foreground/60">{sub}</p>

@@ -4,21 +4,35 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { getTasks, createTask, updateTask, deleteTask, getTagsForTasks, getAllTags } from '@/lib/db'
 import type { Task, TaskStatus, Tag } from '@/types/database'
-import { StatusDot } from '@/components/ui/status-dot'
 import { TagBadge } from '@/components/ui/tag-badge'
 import { OutputModal } from '@/components/ui/output-modal'
 import { formatDate } from '@/lib/date'
-import { LAYER_LABELS, LAYER_ORDER, STATUS_LABEL, STATUS_DOT } from '@/lib/constants'
+import { LAYER_LABELS, LAYER_ORDER, STATUS_LABEL } from '@/lib/constants'
 import {
   Button, Input, PageHeader, EmptyState,
   Dialog, DialogContent, DialogHeader, DialogTitle,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-  Textarea,
+  Textarea, Badge, Tabs, TabsList, TabsTrigger,
+  ConfirmDialog,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@takaki/go-design-system'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Plus, Star, Trash2, ChevronRight, Tag as TagIcon, X } from 'lucide-react'
 import { toast } from 'sonner'
 import type { LayerType } from '@/types/database'
+import { cn } from '@/lib/utils'
+
+const STATUS_BADGE_VARIANT: Record<TaskStatus, 'default' | 'secondary'> = {
+  pending:     'secondary',
+  in_progress: 'default',
+  done:        'secondary',
+}
+
+const STATUS_BADGE_CLASS: Record<TaskStatus, string> = {
+  pending:     '',
+  in_progress: '',
+  done:        'bg-success-subtle text-success hover:bg-success-subtle',
+}
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -58,11 +72,18 @@ export default function TasksPage() {
 
   useEffect(() => { loadTasks() }, [loadTasks])
 
-  const filteredTasks = tasks.filter((t) => {
-    if (statusFilter !== 'all' && t.status !== statusFilter) return false
-    if (tagFilter && !(tagsByTask[t.id] ?? []).some((tag) => tag.name === tagFilter)) return false
-    return true
-  })
+  const tagFilteredTasks = tagFilter
+    ? tasks.filter((t) => (tagsByTask[t.id] ?? []).some((tag) => tag.name === tagFilter))
+    : tasks
+
+  const statusCounts: Record<TaskStatus | 'all', number> = {
+    all:         tagFilteredTasks.length,
+    pending:     tagFilteredTasks.filter((t) => t.status === 'pending').length,
+    in_progress: tagFilteredTasks.filter((t) => t.status === 'in_progress').length,
+    done:        tagFilteredTasks.filter((t) => t.status === 'done').length,
+  }
+
+  const filteredTasks = tagFilteredTasks.filter((t) => statusFilter === 'all' || t.status === statusFilter)
 
   const groupedTasks = LAYER_ORDER.reduce<Record<LayerType, Task[]>>((acc, layer) => {
     acc[layer] = filteredTasks.filter((t) => t.layer_type === layer)
@@ -84,7 +105,6 @@ export default function TasksPage() {
   }
 
   const handleDelete = async (task: Task) => {
-    if (!confirm(`"${task.title}" を削除しますか？`)) return
     try {
       await deleteTask(task.id)
       setTasks((prev) => prev.filter((t) => t.id !== task.id))
@@ -175,22 +195,22 @@ export default function TasksPage() {
         }
       />
 
-      {/* フィルター */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-1">
-          {(['all', 'pending', 'in_progress', 'done'] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`text-sm px-3 py-1.5 rounded transition-colors ${
-                statusFilter === s ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {s === 'all' ? 'すべて' : STATUS_LABEL[s]}
-            </button>
-          ))}
-        </div>
+      {/* ステータスフィルター */}
+      <div className="space-y-3">
+        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as TaskStatus | 'all')}>
+          <TabsList>
+            {(['all', 'pending', 'in_progress', 'done'] as const).map((s) => (
+              <TabsTrigger key={s} value={s} className="flex items-center gap-1.5">
+                {s === 'all' ? 'すべて' : STATUS_LABEL[s]}
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 min-w-[1.25rem] flex items-center justify-center">
+                  {statusCounts[s]}
+                </Badge>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
+        {/* タグフィルター */}
         {allTags.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <TagIcon className="w-3 h-3 text-muted-foreground" />
@@ -330,7 +350,7 @@ function TaskRow({
   tags: Tag[]
   isLast: boolean
   onToggleFocus: (task: Task) => void
-  onDelete: (task: Task) => void
+  onDelete: (task: Task) => Promise<void>
   onStatusChange: (status: TaskStatus) => void
 }) {
   return (
@@ -362,26 +382,43 @@ function TaskRow({
       )}
 
       <div className="shrink-0">
-        <select
-          value={task.status}
-          onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
-          className="text-sm rounded px-2 py-1 outline-none cursor-pointer bg-secondary border-none"
-        >
-          {(['pending', 'in_progress', 'done'] as TaskStatus[]).map((s) => (
-            <option key={s} value={s}>{STATUS_LABEL[s]}</option>
-          ))}
-        </select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="focus:outline-none">
+              <Badge
+                variant={STATUS_BADGE_VARIANT[task.status]}
+                className={cn('cursor-pointer text-xs font-medium select-none', STATUS_BADGE_CLASS[task.status])}
+              >
+                {STATUS_LABEL[task.status]}
+              </Badge>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {(['pending', 'in_progress', 'done'] as TaskStatus[]).map((s) => (
+              <DropdownMenuItem key={s} onClick={() => onStatusChange(s)}>
+                {STATUS_LABEL[s]}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-
-      <StatusDot variant={STATUS_DOT[task.status]} className="shrink-0" />
 
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <Link href={`/tasks/${task.id}`} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors">
           <ChevronRight className="w-3 h-3" />
         </Link>
-        <button onClick={() => onDelete(task)} className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors">
-          <Trash2 className="w-3 h-3" />
-        </button>
+        <ConfirmDialog
+          trigger={
+            <button className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors">
+              <Trash2 className="w-3 h-3" />
+            </button>
+          }
+          title={`"${task.title}" を削除しますか？`}
+          description="この操作は取り消せません。"
+          confirmLabel="削除"
+          variant="destructive"
+          onConfirm={() => onDelete(task)}
+        />
       </div>
     </div>
   )

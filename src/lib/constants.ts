@@ -20,9 +20,3 @@ export const STATUS_DOT: Record<TaskStatus, 'gray' | 'blue' | 'green'> = {
   in_progress: 'blue',
   done:        'green',
 }
-
-export const HEALTH_BADGE_CLASS: Record<'green' | 'yellow' | 'red', string> = {
-  green:  'bg-success-subtle text-success',
-  yellow: 'bg-warning-subtle text-warning',
-  red:    'bg-danger-subtle text-destructive',
-}

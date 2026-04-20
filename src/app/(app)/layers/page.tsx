@@ -5,14 +5,19 @@ import { useSearchParams } from 'next/navigation'
 import { getDesignLayers, upsertDesignLayer, deleteDesignLayer } from '@/lib/db'
 import type { DesignLayer } from '@/types/database'
 import { formatDate, getMonthsFromNow, getDaysAgo } from '@/lib/date'
-import { HEALTH_BADGE_CLASS } from '@/lib/constants'
-import { Button, Input, Textarea, PageHeader, EmptyState } from '@takaki/go-design-system'
+import { Button, Input, Textarea, PageHeader, EmptyState, Badge, Tabs, TabsList, TabsTrigger, ConfirmDialog } from '@takaki/go-design-system'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Plus, Pencil, Trash2, Check, X, Layers } from 'lucide-react'
 import { toast } from 'sonner'
 import { Suspense } from 'react'
 
 type TabType = 'core_value' | 'roadmap' | 'spec_design'
+
+const HEALTH_BADGE_CLASS: Record<'green' | 'yellow' | 'red', string> = {
+  green:  'bg-success-subtle text-success hover:bg-success-subtle',
+  yellow: 'bg-warning-subtle text-warning hover:bg-warning-subtle',
+  red:    'bg-danger-subtle text-destructive hover:bg-danger-subtle',
+}
 
 const TAB_CONFIG: Record<TabType, {
   label: string
@@ -26,7 +31,7 @@ const TAB_CONFIG: Record<TabType, {
       const days = getDaysAgo(layer.last_updated_at)
       if (days >= 90) return { status: 'red',    label: `${days}日前に更新（要更新）` }
       if (days >= 30) return { status: 'yellow', label: `${days}日前に更新（注意）` }
-      return             { status: 'green',  label: `${days}日前に更新（健康）` }
+      return             { status: 'green',  label: `${days}日前に更新（良好）` }
     },
   },
   roadmap: {
@@ -37,7 +42,7 @@ const TAB_CONFIG: Record<TabType, {
       const m = getMonthsFromNow(layer.cover_until)
       if (m < 12) return { status: 'red',    label: `残り${m}ヶ月（要補充）` }
       if (m < 24) return { status: 'yellow', label: `残り${m}ヶ月（注意）` }
-      return             { status: 'green',  label: `残り${m}ヶ月（健康）` }
+      return             { status: 'green',  label: `残り${m}ヶ月（良好）` }
     },
   },
   spec_design: {
@@ -48,7 +53,7 @@ const TAB_CONFIG: Record<TabType, {
       const m = getMonthsFromNow(layer.cover_until)
       if (m < 3) return { status: 'red',    label: `残り${m}ヶ月（要補充）` }
       if (m < 6) return { status: 'yellow', label: `残り${m}ヶ月（注意）` }
-      return            { status: 'green',  label: `残り${m}ヶ月（健康）` }
+      return            { status: 'green',  label: `残り${m}ヶ月（良好）` }
     },
   },
 }
@@ -122,7 +127,6 @@ function LayersContent() {
   }
 
   const handleDelete = async (layer: DesignLayer) => {
-    if (!confirm(`"${layer.title}" を削除しますか？`)) return
     try {
       await deleteDesignLayer(layer.id)
       setLayers((prev) => prev.filter((l) => l.id !== layer.id))
@@ -156,22 +160,13 @@ function LayersContent() {
         }
       />
 
-      {/* タブ */}
-      <div className="flex items-center gap-1 border-b border-border">
-        {(Object.keys(TAB_CONFIG) as TabType[]).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => { setActiveTab(tab); setCreateMode(false); setEditingId(null) }}
-            className={`text-sm px-4 py-2.5 transition-colors -mb-px border-b-2 ${
-              activeTab === tab
-                ? 'text-foreground border-[color:var(--color-primary)]'
-                : 'text-muted-foreground border-transparent hover:text-foreground'
-            }`}
-          >
-            {TAB_CONFIG[tab].label}
-          </button>
-        ))}
-      </div>
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as TabType); setCreateMode(false); setEditingId(null) }}>
+        <TabsList>
+          {(Object.keys(TAB_CONFIG) as TabType[]).map((tab) => (
+            <TabsTrigger key={tab} value={tab}>{TAB_CONFIG[tab].label}</TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {/* 作成フォーム */}
       {createMode && (
@@ -267,17 +262,26 @@ function LayersContent() {
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <h3 className="text-sm font-medium">{layer.title}</h3>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${HEALTH_BADGE_CLASS[health.status]}`}>
+                        <Badge className={HEALTH_BADGE_CLASS[health.status]}>
                           {health.label}
-                        </span>
+                        </Badge>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => startEdit(layer)} className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors">
                           <Pencil className="w-3 h-3" />
                         </button>
-                        <button onClick={() => handleDelete(layer)} className="p-1.5 rounded text-muted-foreground hover:text-destructive transition-colors">
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                        <ConfirmDialog
+                          trigger={
+                            <button className="p-1.5 rounded text-muted-foreground hover:text-destructive transition-colors">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          }
+                          title={`"${layer.title}" を削除しますか？`}
+                          description="この操作は取り消せません。"
+                          confirmLabel="削除"
+                          variant="destructive"
+                          onConfirm={() => handleDelete(layer)}
+                        />
                       </div>
                     </div>
                     <div className="flex items-center gap-4 mb-2">
