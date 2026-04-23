@@ -65,13 +65,11 @@ ${taskList}`,
         .update({ summary: summaryText })
         .eq("id", existing.id);
     } else {
-      await db
-        .from("weekly_summaries")
-        .insert({
-          user_id: user.id,
-          week_start: weekStart,
-          summary: summaryText,
-        });
+      await db.from("weekly_summaries").insert({
+        user_id: user.id,
+        week_start: weekStart,
+        summary: summaryText,
+      });
     }
 
     return NextResponse.json({ summary: summaryText });

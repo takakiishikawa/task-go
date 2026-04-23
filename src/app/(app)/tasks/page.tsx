@@ -525,7 +525,10 @@ function TaskRow({
       <div className="shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="focus:outline-none p-0 h-auto hover:bg-transparent">
+            <Button
+              variant="ghost"
+              className="focus:outline-none p-0 h-auto hover:bg-transparent"
+            >
               <Badge
                 variant={STATUS_BADGE_VARIANT[task.status]}
                 className={cn(
@@ -556,7 +559,10 @@ function TaskRow({
         </Link>
         <ConfirmDialog
           trigger={
-            <Button variant="ghost" className="p-1 h-auto rounded text-muted-foreground hover:text-destructive transition-colors hover:bg-transparent">
+            <Button
+              variant="ghost"
+              className="p-1 h-auto rounded text-muted-foreground hover:text-destructive transition-colors hover:bg-transparent"
+            >
               <Trash2 className="w-3 h-3" />
             </Button>
           }
