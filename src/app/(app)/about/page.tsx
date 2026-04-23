@@ -11,7 +11,7 @@ export default function AboutPage() {
 
       <div className="flex items-start gap-4 rounded-lg p-5 bg-card border border-border">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
           style={{
             background:
               "linear-gradient(135deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-primary) 70%, #ffffff) 100%)",
@@ -64,7 +64,7 @@ export default function AboutPage() {
             >
               <div className="flex items-start gap-3">
                 <span
-                  className={`text-xs font-mono font-bold shrink-0 mt-0.5 ${item.accent ? "text-primary" : "text-muted-foreground"}`}
+                  className={`text-xs font-mono font-semibold shrink-0 mt-0.5 ${item.accent ? "text-primary" : "text-muted-foreground"}`}
                 >
                   {item.num}
                 </span>
@@ -152,7 +152,7 @@ export default function AboutPage() {
               className="flex gap-3 rounded-lg p-4 bg-card border border-border"
             >
               <div className="shrink-0">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-[color:var(--color-primary)]/15 text-primary">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold bg-[color:var(--color-primary)]/15 text-primary">
                   {i + 1}
                 </div>
               </div>
