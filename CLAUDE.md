@@ -1,74 +1,43 @@
 @AGENTS.md
 
-# CLAUDE.md
+# task-go — CLAUDE.md
 
-このプロダクトは **Goシリーズ** の一員です。  
-Goシリーズ共通のデザインシステムは `@takaki/go-design-system` リポで管理されています。
+## プロジェクト概要
+タスク管理・GTDアプリ。仕事と生活のタスクを統合管理する。
 
-## 絶対に守るルール（最重要）
+## 技術スタック
+- Framework: Next.js (App Router) + TypeScript
+- Styling: Tailwind CSS + go-design-system
+- Auth: Supabase Auth（Google OAuth）
+- DB: Supabase
+- Deploy: Vercel
 
-### 1. UIコンポーネントは必ず @takaki/go-design-system から import する
-
-- ✅ 正しい：`import { Button, Card } from '@takaki/go-design-system'`
-- ❌ NG：独自に `components/ui/button.tsx` を作る
-- ❌ NG：shadcn/ui CLI で直接コンポーネントを追加する
-
-### 2. デザイントークンの上書き禁止
-
-許可されている上書き：
-- `--color-primary`（このプロダクトのブランドカラー）
-- `--color-primary-hover`
-
-### 3. className の使用範囲
-
-許可：レイアウト、配置、レスポンシブ制御  
-禁止：色の直接指定（`bg-red-500` 等）、固定値の角丸、独自シャドウ
-
-### 4. アイコンは lucide-react に統一
-
-### 5. CSS の読み込み方（Tailwind v4 + Turbopack）
-
-`DesignTokens` コンポーネントを `app/layout.tsx` の `<head>` に置く。`@import` は使わない。
-
-```css
-/* app/globals.css */
-@import "tailwindcss";
-@source "../node_modules/@takaki/go-design-system/dist";
-@import "@takaki/go-design-system/theme.css";
+## 開発コマンド
+```bash
+npm install       # 依存関係インストール
+npm run dev       # 開発サーバー (localhost:3000)
+npm run build     # 本番ビルド
+npm run lint      # ESLint
 ```
 
-## このプロダクト固有のルール
+## 重要なルール
+1. **go-design-systemのコンポーネント優先** — Button, Card, Badge等は `@takaki/go-design-system` 経由
+2. **Server Components優先** — `'use client'` は必要箇所のみ
+3. **型安全** — `any` 型は使用しない
+4. **AI SDK** — `@anthropic-ai/sdk` のみ使用（openai等は禁止）
+5. **MetaGo管理下** — コード品質・依存更新PRはMetaGoが自動作成
 
-- **プロダクト名**: TaskGo
-- **プライマリカラー**: `#5E6AD2`（インディゴ）
-  - 選定理由: PdMが設計タスクを規律的・戦略的に管理するツール。インディゴは「集中・構造・知的規律」を象徴し、プロダクトマネジメントの文脈に適合する。NativeGoの青とは明確に差別化されたプロダクトアイデンティティ。
-  - Hover: `#4F5BC0`
-- **ドメイン**: task-go.vercel.app
-- **データモデル概要**:
-  - `tasks`: 設計タスク（layer_type: core_value/roadmap/spec_design/other、status: pending/in_progress/done、is_focus、output_note）
-  - `design_layers`: 設計貯金の状態（layer_type、content、cover_until、last_updated_at）
-  - `weekly_focus_tasks`: 週次フォーカスタスク（week_start、task_id、is_done）
-  - `weekly_summaries`: AI生成の週次サマリー
-  - `tags` / `task_tags`: タグ管理
-  - `ai_suggestions`: タスクへのAIサジェスト
-- **外部連携**: Supabase（DB・認証）、Anthropic Claude API（AIサジェスト・週次サマリー・タグ提案）
-- **固有セマンティックカラー**:
-  - success（健康）: `var(--color-success)` #30A46C
-  - warning（注意）: `var(--color-warning)` #F5A623
-  - danger（要更新）: `var(--color-danger)` #E5484D
+## パッケージ規則
+| Layer | 内容 |
+|-------|------|
+| Foundation | next, react, typescript, tailwindcss, `@takaki/go-design-system` |
+| Layer 1 (DS吸収) | Radix UI等は直接importしない（DS経由で使う） |
+| Layer 2 (全go共通) | `@supabase/*`, zod, date-fns, react-hook-form, `@vercel/analytics` |
+| Layer 3 (機能) | `@dnd-kit/*`, react-dropzone 等（機能に応じて） |
+| Layer 4 (固有) | このプロダクト専用ライブラリのみ |
+| 禁止 | openai, ai, `@ai-sdk/*` |
 
-## 作業時の判断基準
-
-1. 新しいUIが必要 → まず `@takaki/go-design-system` に該当コンポーネントがあるか確認
-2. ある → それを使う
-3. ない → 既存の組み合わせで実現できないか検討
-4. それも無理 → go-design-system 側への追加を検討
-
-## デザインシステムの更新
-
-```json
-// vercel.json
-{
-  "buildCommand": "npm update @takaki/go-design-system && npm run build"
-}
-```
+## MetaGo連携
+MetaGoがこのリポジトリを中央管理しています。
+- **L1（自動マージ）**: ESLint修正、Prettier、未使用import、デザインシステム違反修正、patch/minor依存更新
+- **L2（承認待ち）**: major依存更新のみ
