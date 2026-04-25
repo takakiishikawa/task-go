@@ -498,7 +498,7 @@ export default function TaskDetailPage() {
         {/* Tags */}
         <div>
           <label className="text-sm block mb-1.5 text-muted-foreground flex items-center gap-1">
-            <TagIcon style={{ width: 11, height: 11 }} />
+            <TagIcon className="size-2.5" />
             タグ
           </label>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -523,7 +523,7 @@ export default function TaskDetailPage() {
                   }
                 }}
                 placeholder="タグを追加..."
-                style={{ width: 100 }}
+                className="w-25"
                 list="tag-suggestions"
               />
               <datalist id="tag-suggestions">
@@ -540,7 +540,7 @@ export default function TaskDetailPage() {
                   onClick={() => handleAddTag(tagInput)}
                   className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <Plus style={{ width: 12, height: 12 }} />
+                  <Plus className="size-3" />
                 </Button>
               )}
             </div>
@@ -553,7 +553,7 @@ export default function TaskDetailPage() {
               disabled={tagSuggesting}
               className="flex items-center gap-1 text-sm px-2 py-0.5 rounded transition-colors disabled:opacity-50 text-primary border border-[color:var(--color-primary)]/30 bg-transparent hover:bg-[color:var(--color-primary)]/10"
             >
-              <Sparkles style={{ width: 10, height: 10 }} />
+              <Sparkles className="size-2.5" />
               {tagSuggesting ? "提案中..." : "AI提案"}
             </Button>
           </div>
@@ -566,7 +566,7 @@ export default function TaskDetailPage() {
           <h3 className="text-sm font-medium mb-3 flex items-center gap-2 text-muted-foreground">
             <AlertTriangle
               className="text-warning"
-              style={{ width: 12, height: 12 }}
+              className="size-3"
             />
             課題発見AI
           </h3>
@@ -582,7 +582,7 @@ export default function TaskDetailPage() {
             disabled={aiLoading !== null}
             className="flex items-center gap-2 text-sm px-4 py-2.5 rounded transition-colors disabled:opacity-50 bg-warning-subtle text-warning border border-[color:var(--color-warning)]/30 hover:bg-[color:var(--color-warning)]/20"
           >
-            <Sparkles style={{ width: 12, height: 12 }} />
+            <Sparkles className="size-3" />
             {aiLoading === "issues" ? "分析中..." : "課題を発見する"}
           </Button>
         </div>
@@ -594,7 +594,7 @@ export default function TaskDetailPage() {
           <h3 className="text-sm font-medium mb-4 flex items-center gap-2 text-muted-foreground">
             <Sparkles
               className="text-primary"
-              style={{ width: 12, height: 12 }}
+              className="size-3"
             />
             AIサジェスト
           </h3>
@@ -606,7 +606,7 @@ export default function TaskDetailPage() {
               disabled={aiLoading !== null}
               className="flex items-center gap-2 text-sm px-4 py-2.5 rounded border transition-colors disabled:opacity-50 border-[color:var(--color-primary)] text-primary bg-transparent hover:bg-[color:var(--color-primary)]/10"
             >
-              <Sparkles style={{ width: 12, height: 12 }} />
+              <Sparkles className="size-3" />
               {aiLoading === "first_step"
                 ? "提案中..."
                 : "次の一手を提案してもらう"}
@@ -619,7 +619,7 @@ export default function TaskDetailPage() {
               disabled={aiLoading !== null}
               className="flex items-center gap-2 text-sm px-4 py-2.5 rounded border transition-colors disabled:opacity-50 border-border text-muted-foreground hover:border-ring hover:text-foreground bg-transparent"
             >
-              <BookOpen style={{ width: 12, height: 12 }} />
+              <BookOpen className="size-3" />
               {aiLoading === "research"
                 ? "提案中..."
                 : "リサーチを手伝ってもらう"}
@@ -632,7 +632,7 @@ export default function TaskDetailPage() {
       {suggestions.length > 0 && (
         <div>
           <h3 className="text-xs font-medium mb-3 uppercase tracking-wider flex items-center gap-2 text-muted-foreground">
-            <Clock style={{ width: 12, height: 12 }} />
+            <Clock className="size-3" />
             過去のAI提案
           </h3>
           <div className="space-y-3">

@@ -142,7 +142,7 @@ export function TaskGoSidebar() {
                   </div>
                   <div className="flex flex-col gap-0.5 leading-none min-w-0">
                     <span className="text-xs text-muted-foreground">App</span>
-                    <span className="text-[15px] font-medium tracking-tight truncate">
+                    <span className="text-sm font-medium tracking-tight truncate">
                       TaskGo
                     </span>
                   </div>
@@ -168,12 +168,8 @@ export function TaskGoSidebar() {
                     className="gap-2"
                   >
                     <span
-                      className="shrink-0 rounded-full"
-                      style={{
-                        width: 8,
-                        height: 8,
-                        backgroundColor: app.color,
-                      }}
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: app.color }}
                       aria-hidden
                     />
                     <span className="flex-1">{app.name}</span>

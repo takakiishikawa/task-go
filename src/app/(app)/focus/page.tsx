@@ -157,7 +157,7 @@ export default function FocusPage() {
               {formatWeekLabel(offset)}
               {count > 0 && (
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${allDone ? "bg-success-subtle text-success" : "bg-accent text-muted-foreground"}`}
+                  className={`text-xs px-1.5 py-0.5 rounded-full ${allDone ? "bg-success-subtle text-success" : "bg-accent text-muted-foreground"}`}
                 >
                   {doneCount}/{count}
                 </span>

@@ -24,7 +24,7 @@ export function StatusDot({ variant, label, className }: StatusDotProps) {
           "inline-block rounded-full flex-shrink-0",
           dotClass[variant],
         )}
-        style={{ width: 6, height: 6 }}
+        className="size-1.5"
       />
       {label && <span className="text-sm text-muted-foreground">{label}</span>}
     </span>

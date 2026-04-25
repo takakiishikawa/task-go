@@ -284,7 +284,7 @@ export default function TasksPage() {
                 {s === "all" ? "すべて" : STATUS_LABEL[s]}
                 <Badge
                   variant="secondary"
-                  className="text-[10px] px-1.5 py-0 h-4 min-w-[1.25rem] flex items-center justify-center"
+                  className="text-xs px-1.5 py-0 h-4 min-w-5 flex items-center justify-center"
                 >
                   {statusCounts[s]}
                 </Badge>
