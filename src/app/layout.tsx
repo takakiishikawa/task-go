@@ -4,7 +4,6 @@ import "./globals.css";
 import { DesignTokens, AppLayout, Toaster } from "@takaki/go-design-system";
 import { Analytics } from "@vercel/analytics/react";
 import { TaskGoSidebar } from "@/components/layout/sidebar";
-import { DarkModeInit } from "@/components/ui/dark-mode-init";
 import { createClient } from "@/lib/supabase/server";
 
 const inter = Inter({
@@ -35,7 +34,11 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <DarkModeInit />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('taskgo-theme')||'light';if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');})();`,
+          }}
+        />
         <DesignTokens primaryColor="#5E6AD2" primaryColorHover="#4F5BC0" />
       </head>
       <body className="min-h-full">
