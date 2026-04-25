@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { DesignTokens, AppLayout, Toaster } from "@takaki/go-design-system";
+import { Analytics } from "@vercel/analytics/react";
 import { TaskGoSidebar } from "@/components/layout/sidebar";
 import { DarkModeInit } from "@/components/ui/dark-mode-init";
 import { createClient } from "@/lib/supabase/server";
@@ -46,6 +47,7 @@ export default async function RootLayout({
           <main>{children}</main>
         )}
         <Toaster position="bottom-right" />
+        <Analytics />
       </body>
     </html>
   );
