@@ -1,5 +1,33 @@
-The file was corrupted — its content was a prose commit message instead of code. I've reconstructed `StatusDot` at `src/components/ui/status-dot.tsx` with:
+import { cn } from "@/lib/utils";
 
-- `cn` imported from `@takaki/go-design-system` (confirmed exported there)
-- Outer `<span>` accepting an optional `className` prop
-- Inner `<span>` with a single merged `className={cn("rounded-full size-1.5", statusColorMap[status])}` — matching the description of the fix that was supposed to be applied
+type StatusVariant = "green" | "yellow" | "red" | "gray" | "blue";
+
+const dotClass: Record<StatusVariant, string> = {
+  green: "bg-success",
+  yellow: "bg-warning",
+  red: "bg-danger",
+  gray: "bg-[color:var(--color-text-subtle)]",
+  blue: "bg-primary",
+};
+
+interface StatusDotProps {
+  variant: StatusVariant;
+  label?: string;
+  className?: string;
+}
+
+export function StatusDot({ variant, label, className }: StatusDotProps) {
+  return (
+    <span className={cn("inline-flex items-center gap-1.5", className)}>
+      <span
+        className={cn(
+          "inline-block rounded-full flex-shrink-0 size-1.5",
+          dotClass[variant],
+        )}
+      />
+      {label && <span className="text-sm text-muted-foreground">{label}</span>}
+    </span>
+  );
+}
+
+export { dotClass as statusDotClass };
