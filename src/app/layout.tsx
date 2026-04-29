@@ -4,7 +4,7 @@ import "./globals.css";
 import { DesignTokens, AppLayout, Toaster } from "@takaki/go-design-system";
 import { Analytics } from "@vercel/analytics/react";
 import { TaskGoSidebar } from "@/components/layout/sidebar";
-import { DarkModeInit } from "@/components/ui/dark-mode-init";
+import { DarkModeInit } from "@/components/dark-mode-init";
 import { createClient } from "@/lib/supabase/server";
 
 const inter = Inter({
