@@ -11,7 +11,7 @@ import {
 } from "@/lib/db";
 import type { Task } from "@/types/database";
 import { getWeekStart, formatWeekLabel } from "@/lib/date";
-import { StatusDot } from "@/components/common/status-dot";
+import { StatusDot } from "@/components/ui/status-dot";
 import {
   Button,
   Input,
