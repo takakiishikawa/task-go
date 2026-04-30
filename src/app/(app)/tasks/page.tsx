@@ -312,7 +312,9 @@ export default function TasksPage() {
       <div className="space-y-3">
         <Tabs
           value={statusFilter}
-          onValueChange={(v: string) => setStatusFilter(v as TaskStatus | "all")}
+          onValueChange={(v: string) =>
+            setStatusFilter(v as TaskStatus | "all")
+          }
         >
           <TabsList>
             {(["all", "pending", "in_progress", "done"] as const).map((s) => (
