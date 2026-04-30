@@ -11,7 +11,6 @@ import {
   getAllTags,
 } from "@/lib/db";
 import type { Task, TaskStatus, Tag } from "@/types/database";
-import { TagBadge } from "@/components/ui/tag-badge";
 import { OutputModal } from "@/components/ui/output-modal";
 import { formatDate } from "@/lib/date";
 import { LAYER_LABELS, LAYER_ORDER, STATUS_LABEL } from "@/lib/constants";
@@ -40,7 +39,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@takaki/go-design-system";
-import { DatePicker } from "@/components/ui/date-picker";
 import {
   Plus,
   Star,
@@ -52,6 +50,48 @@ import {
 import { toast } from "@takaki/go-design-system";
 import type { LayerType } from "@/types/database";
 import { cn } from "@/lib/utils";
+
+const TAG_COLORS = [
+  "bg-blue-100 text-blue-700",
+  "bg-green-100 text-green-700",
+  "bg-purple-100 text-purple-700",
+  "bg-orange-100 text-orange-700",
+  "bg-pink-100 text-pink-700",
+];
+
+function TagBadge({ name, size = "sm" }: { name: string; size?: "xs" | "sm" }) {
+  const idx =
+    name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) %
+    TAG_COLORS.length;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full font-medium",
+        TAG_COLORS[idx],
+        size === "xs" ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-xs",
+      )}
+    >
+      {name}
+    </span>
+  );
+}
+
+function DatePicker({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange: (v: string | undefined) => void;
+}) {
+  return (
+    <input
+      type="date"
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value || undefined)}
+      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+    />
+  );
+}
 
 const STATUS_BADGE_VARIANT: Record<TaskStatus, "default" | "secondary"> = {
   pending: "secondary",
@@ -272,7 +312,7 @@ export default function TasksPage() {
       <div className="space-y-3">
         <Tabs
           value={statusFilter}
-          onValueChange={(v) => setStatusFilter(v as TaskStatus | "all")}
+          onValueChange={(v: string) => setStatusFilter(v as TaskStatus | "all")}
         >
           <TabsList>
             {(["all", "pending", "in_progress", "done"] as const).map((s) => (
@@ -402,7 +442,7 @@ export default function TasksPage() {
               </label>
               <Select
                 value={form.layer_type}
-                onValueChange={(v) =>
+                onValueChange={(v: string) =>
                   setForm((f) => ({ ...f, layer_type: v as LayerType }))
                 }
               >
