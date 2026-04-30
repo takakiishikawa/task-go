@@ -19,7 +19,6 @@ import type {
   Tag,
 } from "@/types/database";
 import { StatusDot } from "@/components/ui/status-dot";
-import { TagBadge } from "@/components/ui/tag-badge";
 import { OutputModal } from "@/components/ui/output-modal";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -53,6 +52,29 @@ import {
 const ISSUE_TITLE_PREFIXES = ["【短期】", "【中期】"];
 function isIssueDiscoveryTask(title: string) {
   return ISSUE_TITLE_PREFIXES.some((prefix) => title.startsWith(prefix));
+}
+
+function TagBadge({
+  name,
+  onRemove,
+}: {
+  name: string;
+  size?: "sm" | "md";
+  onRemove?: () => void;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-secondary text-muted-foreground">
+      {name}
+      {onRemove && (
+        <button
+          onClick={onRemove}
+          className="ml-0.5 hover:text-foreground transition-colors"
+        >
+          <X className="size-2.5" />
+        </button>
+      )}
+    </span>
+  );
 }
 
 export default function TaskDetailPage() {
@@ -120,7 +142,6 @@ export default function TaskDetailPage() {
     const isMarkingDone = newStatus === "done" && task.status !== "done";
 
     if (isMarkingDone) {
-      // Save everything except status/completed_at — output modal will handle those
       setSaving(true);
       try {
         const updated = await updateTask(task.id, {
@@ -367,7 +388,7 @@ export default function TaskDetailPage() {
             {editMode ? (
               <Select
                 value={editForm.layer_type}
-                onValueChange={(v) =>
+                onValueChange={(v: string) =>
                   setEditForm((f) => ({ ...f, layer_type: v as LayerType }))
                 }
               >
@@ -400,7 +421,7 @@ export default function TaskDetailPage() {
             {editMode ? (
               <Select
                 value={editForm.status}
-                onValueChange={(v) =>
+                onValueChange={(v: string) =>
                   setEditForm((f) => ({ ...f, status: v as TaskStatus }))
                 }
               >
@@ -433,7 +454,9 @@ export default function TaskDetailPage() {
             {editMode ? (
               <DatePicker
                 value={editForm.due_date}
-                onChange={(v) => setEditForm((f) => ({ ...f, due_date: v }))}
+                onChange={(v: string | undefined) =>
+                  setEditForm((f) => ({ ...f, due_date: v }))
+                }
               />
             ) : (
               <span className="text-sm text-foreground">
