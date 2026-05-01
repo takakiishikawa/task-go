@@ -15,12 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  AppSwitcher,
   UserMenu,
 } from "@takaki/go-design-system";
 import {
@@ -29,11 +24,12 @@ import {
   Target,
   Layers,
   Info,
+  Languages,
+  Leaf,
   Zap,
+  ChefHat,
   Sun,
   Moon,
-  ChevronsUpDown,
-  Check,
 } from "lucide-react";
 
 const GO_APPS = [
@@ -41,19 +37,27 @@ const GO_APPS = [
     name: "NativeGo",
     url: "https://english-learning-app-black.vercel.app/",
     color: "#0052CC",
+    icon: Languages,
   },
   {
     name: "KenyakuGo",
     url: "https://kenyaku-go.vercel.app/",
     color: "#F5A623",
+    icon: Leaf,
   },
-  { name: "TaskGo", url: "https://task-go.vercel.app", color: "#5E6AD2" },
+  {
+    name: "TaskGo",
+    url: "https://task-go.vercel.app",
+    color: "#5E6AD2",
+    icon: Zap,
+  },
   {
     name: "CookGo",
     url: "https://cook-go-lovat.vercel.app/dashboard",
     color: "#1AD1A5",
+    icon: ChefHat,
   },
-] as const;
+];
 
 const mainNavItems = [
   { href: "/", label: "ダッシュボード", icon: LayoutDashboard },
@@ -111,67 +115,13 @@ export function TaskGoSidebar() {
 
   return (
     <Sidebar>
-      {/* ヘッダー：ロゴ + アプリ切り替え */}
+      {/* ヘッダー：アプリ切り替え */}
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <div
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-primary) 60%, white) 100%)",
-                    }}
-                  >
-                    <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
-                  </div>
-                  <div className="flex flex-col gap-0.5 leading-none min-w-0">
-                    <span className="text-xs text-muted-foreground">App</span>
-                    <span className="text-sm font-medium tracking-tight truncate">
-                      TaskGo
-                    </span>
-                  </div>
-                  <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-52"
-                align="start"
-                side="bottom"
-                sideOffset={4}
-              >
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Goシリーズ
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {GO_APPS.map((app) => (
-                  <DropdownMenuItem
-                    key={app.name}
-                    onSelect={() => {
-                      window.location.href = app.url;
-                    }}
-                    className="gap-2"
-                  >
-                    <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: app.color }}
-                      aria-hidden
-                    />
-                    <span className="flex-1">{app.name}</span>
-                    {app.name === "TaskGo" && (
-                      <Check className="h-4 w-4 shrink-0 opacity-70" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <AppSwitcher
+          currentApp="TaskGo"
+          apps={GO_APPS}
+          placement="bottom"
+        />
       </SidebarHeader>
 
       {/* メインナビ */}
